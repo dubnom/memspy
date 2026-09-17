@@ -1,0 +1,16 @@
+refresh:
+  name: Refresh object sensors
+  description: Collect the current object count and memory snapshot.
+
+set_frequency:
+  name: Set refresh frequency
+  description: Set the automatic sensor refresh interval in seconds. Use zero to disable it.
+  fields:
+    frequency:
+      name: Frequency
+      description: Seconds between automatic refreshes.
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box

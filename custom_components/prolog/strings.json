@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Prolog",
+        "description": "Add the Prolog integration. This exposes object count and memory sensors with manual and automatic refresh."
+      }
+    },
+    "abort": {
+      "already_configured": "Prolog is already configured."
+    }
+  }
+}
