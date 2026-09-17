@@ -11,4 +11,3 @@ for obj in gc.get_objects():
     class_count[class_name] = {"count": count, "memory": memory}
 
 print("Class counts:", class_count)
-    
