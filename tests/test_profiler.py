@@ -58,19 +58,19 @@ def test_parse_report_from_snapshot_map():
 
 
 def test_class_names_and_memory_are_available_per_object_type():
-    manager = ProfilerManager(min_memory=0)
+    manager = ProfilerManager(top_n=2)
     manager.last_report = {
         "object_counts": {"dict": 7, "list": 10},
         "memory_counts": {"dict": 128, "list": 256},
     }
 
-    assert manager.class_names == ["dict", "list"]
+    assert manager.class_names == ["list", "dict"]
     assert manager.last_report["object_counts"]["dict"] == 7
     assert manager.last_report["memory_counts"]["dict"] == 128
 
 
-def test_memory_range_filters_supported_classes_and_notifies_listeners():
-    manager = ProfilerManager(min_memory=5, max_memory=10)
+def test_top_n_filters_supported_classes_and_notifies_listeners():
+    manager = ProfilerManager(top_n=1)
     notifications = []
     manager.add_refresh_listener(lambda: notifications.append(manager.class_names))
     manager.last_report = {
@@ -78,20 +78,21 @@ def test_memory_range_filters_supported_classes_and_notifies_listeners():
         "memory_counts": {"dict": 7, "list": 3, "set": 12},
     }
 
-    assert manager.class_names == ["dict"]
-    manager.set_memory_range(3, 12)
+    assert manager.class_names == ["set"]
+    manager.set_top_n(3)
 
-    assert manager.class_names == ["dict", "list", "set"]
+    assert manager.class_names == ["set", "dict", "list"]
     manager.refresh()
     manager.notify_refresh_listeners()
     assert notifications
 
 
-def test_memory_bounds_can_cross_without_invalid_range_error():
-    manager = ProfilerManager(min_memory=10, max_memory=20)
+def test_top_n_must_be_positive():
+    manager = ProfilerManager()
 
-    manager.set_min_memory(30)
-    assert (manager.min_memory, manager.max_memory) == (30, 30)
-
-    manager.set_max_memory(5)
-    assert (manager.min_memory, manager.max_memory) == (5, 5)
+    try:
+        manager.set_top_n(0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("top_n=0 should raise ValueError")

@@ -1,4 +1,4 @@
-"""Sensors exposing garbage-collected object statistics."""
+"""Sensors exposing the highest-memory garbage-collected object classes."""
 from __future__ import annotations
 
 from homeassistant.components.sensor import (

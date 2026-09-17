@@ -11,15 +11,15 @@ This project has no relationship to any other project on this machine.
 - `prolog.refresh` action — immediately refreshes all object sensors.
 - `prolog.set_frequency` action — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
-- `number.prolog_min_memory` and `number.prolog_max_memory` — set the inclusive
-  memory thresholds for supported class sensors, in bytes.
+- `number.prolog_top_n` — sets how many of the highest-memory classes receive
+  sensors. It defaults to `50`.
 - One `sensor.prolog_{class_name}` entity per object class — its state is the
   referent memory estimate in bytes; its `count` attribute is the live object
   count and its `gc_stats` attribute contains the per-generation
   `gc.get_stats()` values.
 
-Classes outside the configured range become unavailable. Classes that enter
-the range are added automatically on the next refresh.
+Only the configured highest-memory classes receive sensors. The set is updated
+dynamically on the next refresh.
 
 ## Installation
 
@@ -44,8 +44,8 @@ data:
 
 The object sensors expose one entity per supported Python class. Their state is
 the memory estimate and their `count` attribute is the live object count. The
-memory range defaults to values from `1000` through the maximum supported
-value; use the two number entities to change which classes are supported.
+top-memory-user limit defaults to `50`; use `number.prolog_top_n` to change
+which classes are supported.
 
 ## Development
 

@@ -1,4 +1,4 @@
-"""Number entities controlling the supported memory range."""
+"""Number entity controlling the number of supported memory users."""
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -9,8 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
-    ATTR_MAX_MEMORY,
-    ATTR_MIN_MEMORY,
+    ATTR_TOP_N,
     DOMAIN,
     SIGNAL_PROFILER_UPDATED,
 )
@@ -20,44 +19,39 @@ from .profiler import ProfilerManager
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up memory range controls."""
+    """Set up the top-memory-user control."""
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            MemoryRangeNumber(manager, entry, ATTR_MIN_MEMORY),
-            MemoryRangeNumber(manager, entry, ATTR_MAX_MEMORY),
+            TopNNumber(manager, entry),
         ]
     )
 
 
-class MemoryRangeNumber(NumberEntity):
-    """A number entity controlling one side of the memory range."""
+class TopNNumber(NumberEntity):
+    """A number entity controlling how many memory users are supported."""
 
-    _attr_native_min_value = 0
+    _attr_native_min_value = 1
     _attr_native_max_value = 2**63 - 1
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
 
-    def __init__(self, manager: ProfilerManager, entry: ConfigEntry, bound: str) -> None:
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._bound = bound
-        self._attr_name = f"prolog_{bound}"
-        self._attr_unique_id = f"{entry.entry_id}_{bound}"
+        self._attr_name = "prolog_top_n"
+        self._attr_unique_id = f"{entry.entry_id}_top_n"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
         )
 
     @property
     def native_value(self) -> int:
-        return getattr(self._manager, self._bound)
+        return self._manager.top_n
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the bound and refresh object sensors."""
         value = int(value)
-        if self._bound == ATTR_MIN_MEMORY:
-            self._manager.set_min_memory(value)
-        else:
-            self._manager.set_max_memory(value)
+        self._manager.set_top_n(value)
         await self.hass.async_add_executor_job(self._manager.refresh)
         self._manager.notify_refresh_listeners()
         async_dispatcher_send(self.hass, SIGNAL_PROFILER_UPDATED)

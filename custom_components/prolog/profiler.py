@@ -5,7 +5,7 @@ import gc
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from .const import DEFAULT_MAX_MEMORY, DEFAULT_MIN_MEMORY
+from .const import DEFAULT_TOP_N
 
 
 class ProfilerManager:
@@ -13,11 +13,9 @@ class ProfilerManager:
 
     def __init__(
         self,
-        min_memory: int = DEFAULT_MIN_MEMORY,
-        max_memory: int = DEFAULT_MAX_MEMORY,
+        top_n: int = DEFAULT_TOP_N,
     ) -> None:
-        self.min_memory = min_memory
-        self.max_memory = max_memory
+        self.top_n = top_n
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
 
@@ -30,22 +28,11 @@ class ProfilerManager:
         for listener in self._refresh_listeners:
             listener()
 
-    def set_memory_range(self, min_memory: int, max_memory: int) -> None:
-        """Set the inclusive memory range that supports sensors."""
-        if min_memory > max_memory:
-            raise ValueError("min_memory must not exceed max_memory")
-        self.min_memory = min_memory
-        self.max_memory = max_memory
-
-    def set_min_memory(self, min_memory: int) -> None:
-        """Set the lower bound, expanding the upper bound if needed."""
-        self.min_memory = min_memory
-        self.max_memory = max(self.max_memory, min_memory)
-
-    def set_max_memory(self, max_memory: int) -> None:
-        """Set the upper bound, expanding the lower bound if needed."""
-        self.max_memory = max_memory
-        self.min_memory = min(self.min_memory, max_memory)
+    def set_top_n(self, top_n: int) -> None:
+        """Set the number of highest-memory classes that support sensors."""
+        if top_n < 1:
+            raise ValueError("top_n must be at least 1")
+        self.top_n = top_n
 
     @property
     def class_names(self) -> list[str]:
@@ -56,13 +43,15 @@ class ProfilerManager:
 
     @property
     def supported_class_names(self) -> list[str]:
-        """Return classes whose current memory is within the configured range."""
+        """Return the classes with the highest current memory usage."""
         if not self.last_report:
             return []
         return [
             name
-            for name, memory in self.last_report["memory_counts"].items()
-            if self.min_memory <= memory <= self.max_memory
+            for name, _memory in sorted(
+                self.last_report["memory_counts"].items(),
+                key=lambda item: (-item[1], item[0]),
+            )[: self.top_n]
         ]
 
     def refresh(self) -> dict:
