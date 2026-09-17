@@ -13,7 +13,8 @@ This project has no relationship to any other project on this machine.
 - `number.prolog_min_count` and `number.prolog_max_count` — set the inclusive
   `min_count` and `max_count` thresholds for supported class sensors.
 - One `sensor.prolog_{class_name}` entity per object class — its state is the
-  live object count and its `memory` attribute is the referent memory estimate.
+  live object count; its `memory` attribute is the referent memory estimate and
+  its `gc_stats` attribute contains the per-generation `gc.get_stats()` values.
 
 Classes outside the configured range become unavailable. Classes that enter
 the range are added automatically on the next refresh.

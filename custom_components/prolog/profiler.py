@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import gc
-from datetime import datetime, timezone
 from collections.abc import Callable
+from datetime import datetime, timezone
 
 from .const import DEFAULT_MAX_COUNT, DEFAULT_MIN_COUNT
 
@@ -79,10 +79,12 @@ class ProfilerManager:
 
         object_counts = dict(sorted(object_counts.items()))
         memory_counts = dict(sorted(memory_counts.items()))
+        gc_stats = [dict(stats) for stats in gc.get_stats()]
         report = {
             "refreshed_at": datetime.now(timezone.utc).isoformat(),
             "object_counts": object_counts,
             "memory_counts": memory_counts,
+            "gc_stats": gc_stats,
             "summary": {
                 "object_count": sum(object_counts.values()),
                 "memory": sum(memory_counts.values()),

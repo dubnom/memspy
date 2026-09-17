@@ -24,6 +24,8 @@ def test_refresh_collects_counts_and_memory():
 
     assert "dict" in report["object_counts"] or "set" in report["object_counts"]
     assert "dict" in report["memory_counts"] or "set" in report["memory_counts"]
+    assert report["gc_stats"]
+    assert all(isinstance(stats, dict) for stats in report["gc_stats"])
     assert report["summary"]["object_type_count"] > 0
     assert all(isinstance(item["value"], int) for item in parsed)
     assert all(item["value"] >= 0 for item in parsed)

@@ -94,4 +94,7 @@ class ObjectSensor(_PrologEntity):
         report = self._manager.last_report
         if not report:
             return {}
-        return {"memory": report["memory_counts"].get(self._class_name, 0)}
+        return {
+            "memory": report["memory_counts"].get(self._class_name, 0),
+            "gc_stats": report["gc_stats"],
+        }
