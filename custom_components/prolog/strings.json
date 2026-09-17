@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Prolog",
-        "description": "Add the Prolog integration. This exposes per-class object count sensors, count range controls, and manual or automatic refresh."
+        "description": "Add the Prolog integration. This exposes per-class memory sensors, memory range controls, and manual or automatic refresh."
       }
     },
     "abort": {

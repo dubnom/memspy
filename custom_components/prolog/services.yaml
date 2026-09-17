@@ -1,6 +1,6 @@
 refresh:
   name: Refresh object sensors
-  description: Action to collect the current object count and memory snapshot.
+  description: Action to collect the current object memory snapshot.
 
 set_frequency:
   name: Set refresh frequency

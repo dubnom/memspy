@@ -1,4 +1,4 @@
-"""Number entities controlling the supported object-count range."""
+"""Number entities controlling the supported memory range."""
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -9,8 +9,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
-    ATTR_MAX_COUNT,
-    ATTR_MIN_COUNT,
+    ATTR_MAX_MEMORY,
+    ATTR_MIN_MEMORY,
     DOMAIN,
     SIGNAL_PROFILER_UPDATED,
 )
@@ -20,18 +20,18 @@ from .profiler import ProfilerManager
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up count range controls."""
+    """Set up memory range controls."""
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            CountRangeNumber(manager, entry, ATTR_MIN_COUNT),
-            CountRangeNumber(manager, entry, ATTR_MAX_COUNT),
+            MemoryRangeNumber(manager, entry, ATTR_MIN_MEMORY),
+            MemoryRangeNumber(manager, entry, ATTR_MAX_MEMORY),
         ]
     )
 
 
-class CountRangeNumber(NumberEntity):
-    """A number entity controlling one side of the count range."""
+class MemoryRangeNumber(NumberEntity):
+    """A number entity controlling one side of the memory range."""
 
     _attr_native_min_value = 0
     _attr_native_max_value = 2**63 - 1
@@ -54,10 +54,10 @@ class CountRangeNumber(NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Update the bound and refresh object sensors."""
         value = int(value)
-        if self._bound == ATTR_MIN_COUNT:
-            self._manager.set_min_count(value)
+        if self._bound == ATTR_MIN_MEMORY:
+            self._manager.set_min_memory(value)
         else:
-            self._manager.set_max_count(value)
+            self._manager.set_max_memory(value)
         await self.hass.async_add_executor_job(self._manager.refresh)
         self._manager.notify_refresh_listeners()
         async_dispatcher_send(self.hass, SIGNAL_PROFILER_UPDATED)

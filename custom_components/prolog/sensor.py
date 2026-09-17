@@ -1,7 +1,11 @@
 """Sensors exposing garbage-collected object statistics."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -58,11 +62,12 @@ class _PrologEntity(SensorEntity):
 
 
 class ObjectSensor(_PrologEntity):
-    """Reports the count and memory estimate for one Python object class."""
+    """Reports memory usage and object count for one Python object class."""
 
-    _attr_icon = "mdi:counter"
+    _attr_device_class = SensorDeviceClass.DATA_SIZE
+    _attr_icon = "mdi:memory"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "objects"
+    _attr_native_unit_of_measurement = "B"
 
     def __init__(
         self, manager: ProfilerManager, entry: ConfigEntry, class_name: str
@@ -82,11 +87,11 @@ class ObjectSensor(_PrologEntity):
         report = self._manager.last_report
         if not report or self._class_name not in self._manager.supported_class_names:
             return None
-        return report["object_counts"].get(self._class_name)
+        return report["memory_counts"].get(self._class_name)
 
     @property
     def available(self) -> bool:
-        """Only expose classes within the configured count range."""
+        """Only expose classes within the configured memory range."""
         return self._class_name in self._manager.supported_class_names
 
     @property
@@ -95,6 +100,6 @@ class ObjectSensor(_PrologEntity):
         if not report:
             return {}
         return {
-            "memory": report["memory_counts"].get(self._class_name, 0),
+            "count": report["object_counts"].get(self._class_name, 0),
             "gc_stats": report["gc_stats"],
         }

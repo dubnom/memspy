@@ -5,7 +5,7 @@ import gc
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from .const import DEFAULT_MAX_COUNT, DEFAULT_MIN_COUNT
+from .const import DEFAULT_MAX_MEMORY, DEFAULT_MIN_MEMORY
 
 
 class ProfilerManager:
@@ -13,11 +13,11 @@ class ProfilerManager:
 
     def __init__(
         self,
-        min_count: int = DEFAULT_MIN_COUNT,
-        max_count: int = DEFAULT_MAX_COUNT,
+        min_memory: int = DEFAULT_MIN_MEMORY,
+        max_memory: int = DEFAULT_MAX_MEMORY,
     ) -> None:
-        self.min_count = min_count
-        self.max_count = max_count
+        self.min_memory = min_memory
+        self.max_memory = max_memory
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
 
@@ -30,22 +30,22 @@ class ProfilerManager:
         for listener in self._refresh_listeners:
             listener()
 
-    def set_count_range(self, min_count: int, max_count: int) -> None:
-        """Set the inclusive object-count range that supports sensors."""
-        if min_count > max_count:
-            raise ValueError("min_count must not exceed max_count")
-        self.min_count = min_count
-        self.max_count = max_count
+    def set_memory_range(self, min_memory: int, max_memory: int) -> None:
+        """Set the inclusive memory range that supports sensors."""
+        if min_memory > max_memory:
+            raise ValueError("min_memory must not exceed max_memory")
+        self.min_memory = min_memory
+        self.max_memory = max_memory
 
-    def set_min_count(self, min_count: int) -> None:
+    def set_min_memory(self, min_memory: int) -> None:
         """Set the lower bound, expanding the upper bound if needed."""
-        self.min_count = min_count
-        self.max_count = max(self.max_count, min_count)
+        self.min_memory = min_memory
+        self.max_memory = max(self.max_memory, min_memory)
 
-    def set_max_count(self, max_count: int) -> None:
+    def set_max_memory(self, max_memory: int) -> None:
         """Set the upper bound, expanding the lower bound if needed."""
-        self.max_count = max_count
-        self.min_count = min(self.min_count, max_count)
+        self.max_memory = max_memory
+        self.min_memory = min(self.min_memory, max_memory)
 
     @property
     def class_names(self) -> list[str]:
@@ -56,13 +56,13 @@ class ProfilerManager:
 
     @property
     def supported_class_names(self) -> list[str]:
-        """Return classes whose current counts are within the configured range."""
+        """Return classes whose current memory is within the configured range."""
         if not self.last_report:
             return []
         return [
             name
-            for name, count in self.last_report["object_counts"].items()
-            if self.min_count <= count <= self.max_count
+            for name, memory in self.last_report["memory_counts"].items()
+            if self.min_memory <= memory <= self.max_memory
         ]
 
     def refresh(self) -> dict:
@@ -96,8 +96,8 @@ class ProfilerManager:
         return report
 
     def _parse_report(self, report: dict) -> list[dict]:
-        """Convert a snapshot report into entity/value rows for test and UI display."""
+        """Convert memory values into entity/value rows for test and UI display."""
         rows: list[dict] = []
-        for name, value in report.get("object_counts", {}).items():
+        for name, value in report.get("memory_counts", {}).items():
             rows.append({"entity": name, "value": value})
         return rows

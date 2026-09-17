@@ -1,7 +1,8 @@
 # Prolog
 
-A standalone Home Assistant custom integration that reports live Python object
-counts and referent memory estimates from the running Home Assistant process.
+A standalone Home Assistant custom integration that reports per-class Python
+referent memory usage and garbage-collector statistics from the running Home
+Assistant process.
 
 This project has no relationship to any other project on this machine.
 
@@ -10,11 +11,12 @@ This project has no relationship to any other project on this machine.
 - `prolog.refresh` action — immediately refreshes all object sensors.
 - `prolog.set_frequency` action — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
-- `number.prolog_min_count` and `number.prolog_max_count` — set the inclusive
-  `min_count` and `max_count` thresholds for supported class sensors.
+- `number.prolog_min_memory` and `number.prolog_max_memory` — set the inclusive
+  memory thresholds for supported class sensors, in bytes.
 - One `sensor.prolog_{class_name}` entity per object class — its state is the
-  live object count; its `memory` attribute is the referent memory estimate and
-  its `gc_stats` attribute contains the per-generation `gc.get_stats()` values.
+  referent memory estimate in bytes; its `count` attribute is the live object
+  count and its `gc_stats` attribute contains the per-generation
+  `gc.get_stats()` values.
 
 Classes outside the configured range become unavailable. Classes that enter
 the range are added automatically on the next refresh.
@@ -41,9 +43,9 @@ data:
 ```
 
 The object sensors expose one entity per supported Python class. Their state is
-the live count and their `memory` attribute is the memory estimate. The count
-range defaults to counts from `1000` through the maximum supported value; use
-the two number entities to change which classes are supported.
+the memory estimate and their `count` attribute is the live object count. The
+memory range defaults to values from `1000` through the maximum supported
+value; use the two number entities to change which classes are supported.
 
 ## Development
 
