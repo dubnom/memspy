@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import logging
 
 import voluptuous as vol
 
@@ -21,6 +22,7 @@ from .const import (
 from .profiler import ProfilerManager
 
 PLATFORMS = ["sensor", "number"]
+_LOGGER = logging.getLogger(__name__)
 
 FREQUENCY_SERVICE_SCHEMA = vol.Schema(
     {vol.Required(ATTR_FREQUENCY): vol.All(vol.Coerce(int), vol.Range(min=0))}
@@ -36,6 +38,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         manager.notify_refresh_listeners()
         async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
 
+    async def handle_interval(_now) -> None:
+        """Refresh sensors when the configured interval elapses."""
+        _LOGGER.debug("Refreshing Prolog sensors on the configured interval")
+        await refresh()
+
     async def handle_refresh(call: ServiceCall) -> None:
         await refresh()
 
@@ -47,8 +54,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         frequency = call.data[ATTR_FREQUENCY]
         if frequency:
             refresh_unsub = async_track_time_interval(
-                hass, lambda _: refresh(), timedelta(seconds=frequency)
+                hass, handle_interval, timedelta(seconds=frequency)
             )
+            _LOGGER.debug("Configured Prolog sensor refresh every %s seconds", frequency)
         manager._refresh_unsub = refresh_unsub  # noqa: SLF001
         await refresh()
 

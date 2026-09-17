@@ -1,10 +1,10 @@
 refresh:
   name: Refresh object sensors
-  description: Collect the current object count and memory snapshot.
+  description: Action to collect the current object count and memory snapshot.
 
 set_frequency:
   name: Set refresh frequency
-  description: Set the automatic sensor refresh interval in seconds. Use zero to disable it.
+  description: Action to set the automatic sensor refresh interval in seconds. Use zero to disable it.
   fields:
     frequency:
       name: Frequency

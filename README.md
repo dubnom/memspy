@@ -7,8 +7,8 @@ This project has no relationship to any other project on this machine.
 
 ## Features
 
-- `prolog.refresh` service — immediately refreshes all object sensors.
-- `prolog.set_frequency` service — enables periodic refreshes in seconds;
+- `prolog.refresh` action — immediately refreshes all object sensors.
+- `prolog.set_frequency` action — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
 - `number.prolog_min_count` and `number.prolog_max_count` — set the inclusive
   `min_count` and `max_count` thresholds for supported class sensors.
@@ -28,13 +28,13 @@ repository), restart Home Assistant, then add the integration from
 ## Usage
 
 ```yaml
-service: prolog.refresh
+action: prolog.refresh
 ```
 
 To refresh automatically every 60 seconds:
 
 ```yaml
-service: prolog.set_frequency
+action: prolog.set_frequency
 data:
   frequency: 60
 ```
