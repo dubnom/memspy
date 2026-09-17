@@ -7,11 +7,16 @@ This project has no relationship to any other project on this machine.
 
 ## Features
 
-- `prolog.refresh` service — immediately refreshes both sensors.
+- `prolog.refresh` service — immediately refreshes all object sensors.
 - `prolog.set_frequency` service — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
+- `number.prolog_min_count` and `number.prolog_max_count` — set the inclusive
+  `min_count` and `max_count` thresholds for supported class sensors.
 - One `sensor.prolog_{class_name}` entity per object class — its state is the
   live object count and its `memory` attribute is the referent memory estimate.
+
+Classes outside the configured range become unavailable. Classes that enter
+the range are added automatically on the next refresh.
 
 ## Installation
 
@@ -34,7 +39,10 @@ data:
   frequency: 60
 ```
 
-Read the two sensors for the current totals and their per-type attributes.
+The object sensors expose one entity per supported Python class. Their state is
+the live count and their `memory` attribute is the memory estimate. The count
+range defaults to counts from `1000` through the maximum supported value; use
+the two number entities to change which classes are supported.
 
 ## Development
 

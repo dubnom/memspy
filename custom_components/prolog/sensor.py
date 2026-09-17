@@ -17,9 +17,23 @@ async def async_setup_entry(
 ) -> None:
     """Set up Prolog sensors from a config entry."""
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
+    entities: dict[str, ObjectSensor] = {}
+
+    def add_supported_entities() -> None:
+        new_entities = [
+            ObjectSensor(manager, entry, class_name)
+            for class_name in manager.class_names
+            if class_name not in entities
+        ]
+        entities.update({entity.class_name: entity for entity in new_entities})
+        if new_entities:
+            async_add_entities(new_entities)
+
+    manager.add_refresh_listener(add_supported_entities)
     async_add_entities(
-        [ObjectSensor(manager, entry, class_name) for class_name in manager.class_names]
+        []
     )
+    add_supported_entities()
 
 
 class _PrologEntity(SensorEntity):
@@ -59,9 +73,21 @@ class ObjectSensor(_PrologEntity):
         self._attr_unique_id = f"{entry.entry_id}_{class_name}"
 
     @property
+    def class_name(self) -> str:
+        """Return the Python class represented by this sensor."""
+        return self._class_name
+
+    @property
     def native_value(self) -> int | None:
         report = self._manager.last_report
-        return report["object_counts"].get(self._class_name) if report else None
+        if not report or self._class_name not in self._manager.supported_class_names:
+            return None
+        return report["object_counts"].get(self._class_name)
+
+    @property
+    def available(self) -> bool:
+        """Only expose classes within the configured count range."""
+        return self._class_name in self._manager.supported_class_names
 
     @property
     def extra_state_attributes(self) -> dict:

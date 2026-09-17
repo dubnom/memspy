@@ -1,11 +1,11 @@
 """The Prolog integration."""
 from __future__ import annotations
 
+from datetime import timedelta
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from datetime import timedelta
-
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -20,13 +20,11 @@ from .const import (
 )
 from .profiler import ProfilerManager
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "number"]
 
 FREQUENCY_SERVICE_SCHEMA = vol.Schema(
     {vol.Required(ATTR_FREQUENCY): vol.All(vol.Coerce(int), vol.Range(min=0))}
 )
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Prolog from a config entry."""
     manager = ProfilerManager()
@@ -35,6 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def refresh() -> None:
         await hass.async_add_executor_job(manager.refresh)
+        manager.notify_refresh_listeners()
         async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
 
     async def handle_refresh(call: ServiceCall) -> None:
@@ -60,7 +59,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         handle_set_frequency,
         schema=FREQUENCY_SERVICE_SCHEMA,
     )
-
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
