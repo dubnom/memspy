@@ -34,10 +34,9 @@ async def async_setup_entry(
             async_add_entities(new_entities)
 
     manager.add_refresh_listener(add_supported_entities)
-    async_add_entities(
-        []
-    )
+    async_add_entities([])
     add_supported_entities()
+    async_add_entities([SummarySensor(manager, entry)])
 
 
 class _PrologEntity(SensorEntity):
@@ -61,6 +60,40 @@ class _PrologEntity(SensorEntity):
         self.async_write_ha_state()
 
 
+class SummarySensor(_PrologEntity):
+    """Reports global GC statistics independent of any one object class."""
+
+    _attr_icon = "mdi:chart-box-outline"
+    _attr_should_poll = False
+
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
+        super().__init__(manager, entry)
+        self._attr_name = "prolog"
+        self._attr_unique_id = f"{entry.entry_id}_summary"
+
+    @property
+    def native_value(self) -> int | None:
+        report = self._manager.last_report
+        if not report:
+            return None
+        return report["summary"]["object_count"]
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        report = self._manager.last_report
+        if not report:
+            return {}
+        return {
+            "memory": report["summary"]["memory"],
+            "object_count": report["summary"]["object_count"],
+            "garbage": report.get("garbage", 0),
+            "collections": report.get("collections", 0),
+            "collected": report.get("collected", 0),
+            "uncollectable": report.get("uncollectable", 0),
+            "gc_stats": report["gc_stats"],
+        }
+
+
 class ObjectSensor(_PrologEntity):
     """Reports memory usage and object count for one Python object class."""
 
@@ -74,8 +107,15 @@ class ObjectSensor(_PrologEntity):
     ) -> None:
         super().__init__(manager, entry)
         self._class_name = class_name
-        self._attr_name = f"prolog_{class_name}"
+        self._attr_name = f"class_{class_name}"
         self._attr_unique_id = f"{entry.entry_id}_{class_name}"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = None
+
+    @property
+    def name(self) -> str:
+        """Return the user-facing class name without the prefix."""
+        return self._class_name
 
     @property
     def class_name(self) -> str:
@@ -101,5 +141,6 @@ class ObjectSensor(_PrologEntity):
             return {}
         return {
             "count": report["object_counts"].get(self._class_name, 0),
+            "memory": report["memory_counts"].get(self._class_name, 0),
             "gc_stats": report["gc_stats"],
         }

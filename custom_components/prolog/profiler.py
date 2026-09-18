@@ -74,6 +74,10 @@ class ProfilerManager:
             "object_counts": object_counts,
             "memory_counts": memory_counts,
             "gc_stats": gc_stats,
+            "garbage": len(gc.garbage),
+            "collections": sum(gc.get_count()),
+            "collected": sum(stats.get("collected", 0) for stats in gc_stats),
+            "uncollectable": sum(stats.get("uncollectable", 0) for stats in gc_stats),
             "summary": {
                 "object_count": sum(object_counts.values()),
                 "memory": sum(memory_counts.values()),
