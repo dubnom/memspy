@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SIGNAL_PROFILER_UPDATED
@@ -21,15 +22,27 @@ async def async_setup_entry(
 ) -> None:
     """Set up Prolog sensors from a config entry."""
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
-    entities: dict[str, ObjectSensor] = {}
+    entities: dict[int, ObjectSensor] = {}
+    registry = er.async_get(hass)
+
+    for rank, class_name in enumerate(manager.class_names, start=1):
+        old_unique_id = f"{entry.entry_id}_{class_name}"
+        new_unique_id = f"{entry.entry_id}_class_{rank:03d}"
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, old_unique_id)
+        if entity_id:
+            registry.async_update_entity(
+                entity_id,
+                new_entity_id=f"sensor.class_{rank:03d}",
+                new_unique_id=new_unique_id,
+            )
 
     def add_supported_entities() -> None:
         new_entities = [
-            ObjectSensor(manager, entry, class_name)
-            for class_name in manager.class_names
-            if class_name not in entities
+            ObjectSensor(manager, entry, rank)
+            for rank in range(1, len(manager.class_names) + 1)
+            if rank not in entities
         ]
-        entities.update({entity.class_name: entity for entity in new_entities})
+        entities.update({entity.rank: entity for entity in new_entities})
         if new_entities:
             async_add_entities(new_entities)
 
@@ -102,45 +115,55 @@ class ObjectSensor(_PrologEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "B"
 
-    def __init__(
-        self, manager: ProfilerManager, entry: ConfigEntry, class_name: str
-    ) -> None:
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry, rank: int) -> None:
         super().__init__(manager, entry)
-        self._class_name = class_name
-        self._attr_name = f"class_{class_name}"
-        self._attr_unique_id = f"{entry.entry_id}_{class_name}"
-        self._attr_has_entity_name = True
-        self._attr_translation_key = None
+        self._rank = rank
+        self._attr_unique_id = f"{entry.entry_id}_class_{rank:03d}"
+        self._attr_has_entity_name = False
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Return the stable object ID prefix for this class sensor."""
+        return f"class_{self._rank:03d}"
 
     @property
     def name(self) -> str:
         """Return the user-facing class name without the prefix."""
-        return self._class_name
+        return self.class_name or f"class_{self._rank:03d}"
 
     @property
-    def class_name(self) -> str:
+    def class_name(self) -> str | None:
         """Return the Python class represented by this sensor."""
-        return self._class_name
+        class_names = self._manager.class_names
+        if self._rank > len(class_names):
+            return None
+        return class_names[self._rank - 1]
+
+    @property
+    def rank(self) -> int:
+        """Return the memory ranking represented by this sensor."""
+        return self._rank
 
     @property
     def native_value(self) -> int | None:
         report = self._manager.last_report
-        if not report or self._class_name not in self._manager.supported_class_names:
+        class_name = self.class_name
+        if not report or class_name is None:
             return None
-        return report["memory_counts"].get(self._class_name)
+        return report["memory_counts"].get(class_name)
 
     @property
     def available(self) -> bool:
-        """Only expose classes within the configured memory range."""
-        return self._class_name in self._manager.supported_class_names
+        """Only expose ranks within the configured top-N range."""
+        return self.class_name is not None
 
     @property
     def extra_state_attributes(self) -> dict:
         report = self._manager.last_report
-        if not report:
+        class_name = self.class_name
+        if not report or class_name is None:
             return {}
         return {
-            "count": report["object_counts"].get(self._class_name, 0),
-            "memory": report["memory_counts"].get(self._class_name, 0),
-            "gc_stats": report["gc_stats"],
+            "count": report["object_counts"].get(class_name, 0),
+            "memory": report["memory_counts"].get(class_name, 0),
         }

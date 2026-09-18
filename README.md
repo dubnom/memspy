@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.6
+Current version: 1.1.7
 
 A standalone Home Assistant custom integration that reports Python object memory,
 class-level GC usage, and global garbage-collector statistics from the running
@@ -18,14 +18,14 @@ This project has no relationship to any other project on this machine.
 - `sensor.prolog` — global summary sensor. Its state is the total live object
   count. The attributes include `memory`, `garbage`, `collections`,
   `collected`, `uncollectable`, and `gc_stats`.
-- `sensor.class_<class_name>` — one entity per supported Python class. The
-  sensor state is the estimated referent memory in bytes for that class. The
-  attributes include `count` (live object count), `memory` (class total), and
-  `gc_stats`.
+- `sensor.class_001`, `sensor.class_002`, etc. — rank slots for the supported
+  Python classes, ordered by memory usage. The sensor state is the estimated
+  referent memory in bytes for the class currently occupying that rank. The
+  attributes include `count` (live object count) and `memory` (class total).
 
 The class sensors use a friendly display name equal to the plain class name
-(e.g. `dict`, `list`). Their entity IDs keep the `class_` prefix to make them
-easy to distinguish from the summary sensor.
+(e.g. `dict`, `list`). Their entity IDs use a zero-padded rank so
+`sensor.class_001` is always the highest-memory class.
 
 Only the configured highest-memory classes receive class sensors. The set is
 updated dynamically on the next refresh.
@@ -62,8 +62,8 @@ class sensors expose memory and count for each top-memory Python class. Use
 - `sensor.prolog` state: total object count
 - `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`,
   `uncollectable`, `gc_stats`
-- `sensor.class_dict` state: estimated memory for the `dict` objects
-- `sensor.class_dict` attributes: `count`, `memory`, `gc_stats`
+- `sensor.class_001` state: estimated memory for the highest-memory class
+- `sensor.class_001` attributes: `count`, `memory`
 
 ## Development
 

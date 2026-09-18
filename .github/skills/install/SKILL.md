@@ -13,8 +13,9 @@ Prepare and publish the current Prolog integration.
 2. Read the current `README.md`, integration metadata, action descriptions, and changed implementation files. Update documentation so it describes the actual sensors, controls, refresh behavior, installation steps, and versioned feature set. Keep the documentation version number synchronized with the version in `custom_components/prolog/manifest.json`, updating both when the release version changes. In particular, confirm that the docs match the current entity layout:
    - `sensor.prolog` is the global summary sensor with total object count as its state.
    - The summary sensor exposes `memory`, `garbage`, `collections`, `collected`, `uncollectable`, and `gc_stats` as attributes.
-   - `sensor.class_<class_name>` sensors are per-class memory sensors whose state is memory usage in bytes.
-   - Per-class sensors expose `count`, `memory`, and `gc_stats` as attributes.
+   - `sensor.class_001`, `sensor.class_002`, etc. are zero-padded rank sensors ordered by memory usage; their state is memory usage in bytes.
+   - Class sensor friendly names are the current Python class names, while rank IDs remain stable as classes move between ranks.
+   - Per-class sensors expose `count` and `memory` as attributes.
    - `number.prolog_top_n` controls the top-N class filter and defaults to `50`.
    - The `prolog.refresh` and `prolog.set_frequency` actions still exist and are documented correctly.
 3. Bump the integration patch version in `custom_components/prolog/manifest.json` unless the user specifies a different release level. Preserve the config-flow schema version unless the config-entry data schema changes.
