@@ -30,11 +30,16 @@ async def async_setup_entry(
         new_unique_id = f"{entry.entry_id}_class_{rank:03d}"
         entity_id = registry.async_get_entity_id("sensor", DOMAIN, old_unique_id)
         if entity_id:
-            registry.async_update_entity(
-                entity_id,
-                new_entity_id=f"sensor.class_{rank:03d}",
-                new_unique_id=new_unique_id,
+            target_entity_id = f"sensor.class_{rank:03d}"
+            target_unique_id = registry.async_get_entity_id(
+                "sensor", DOMAIN, new_unique_id
             )
+            if target_unique_id is None or target_unique_id == entity_id:
+                registry.async_update_entity(
+                    entity_id,
+                    new_entity_id=target_entity_id,
+                    new_unique_id=new_unique_id,
+                )
 
     def add_supported_entities() -> None:
         new_entities = [
