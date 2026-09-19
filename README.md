@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.11
+Current version: 1.1.12
 
 A standalone Home Assistant custom integration that reports Python object memory,
 class-level GC usage, global garbage-collector statistics, and tracemalloc
@@ -19,10 +19,12 @@ This project has no relationship to any other project on this machine.
   using the current `number.prolog_top_n` limit.
 - `prolog.stop_tracemalloc` action — stops the tracemalloc session.
 - `number.prolog_top_n` — sets how many of the highest-memory classes receive
-  class sensors and how many tracemalloc rows are returned. It defaults to `50`.
+  class sensors and how many tracemalloc rows are returned. It defaults to `10`.
 - `text.prolog_snapshot_filter` — sets the directory prefix used to filter
   tracemalloc rows before the top-N limit is applied. The value `*` means all
   files; the default is `/config/custom_components`.
+- `binary_sensor.prolog_tracemalloc_active` — reports whether tracemalloc is
+  currently active so the snapshot can be taken.
 - `sensor.prolog_tracemalloc` — stores the number of rows in the most recent
   tracemalloc snapshot as its state and exposes the full top-N snapshot as a
   JSON string in the `snapshot` attribute. The list is limited by the current
@@ -80,7 +82,7 @@ action: prolog.stop_tracemalloc
 The summary sensor exposes the overall GC snapshot and total object count. The
 class sensors expose memory and count for each top-memory Python class. Use
 `number.prolog_top_n` to adjust which classes are supported and how many
-tracemalloc rows are returned; the default is `50`. Use
+tracemalloc rows are returned; the default is `10`. Use
 `text.prolog_snapshot_filter` to restrict entries to a specific Python source
 path, or set it to `*` to include all files.
 
@@ -89,6 +91,7 @@ path, or set it to `*` to include all files.
 - `sensor.prolog` state: total object count
 - `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`,
   `uncollectable`, `gc_stats`
+- `binary_sensor.prolog_tracemalloc_active` state: `on` when tracemalloc is active
 - `text.prolog_snapshot_filter` state: current include path, or `*` for all files
 - `sensor.class_001` state: estimated memory for the highest-memory class
 - `sensor.class_001` attributes: `count`, `memory`

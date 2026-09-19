@@ -11,7 +11,7 @@ SERVICE_STOP_TRACEMALLOC = "stop_tracemalloc"
 
 ATTR_FREQUENCY = "frequency"
 ATTR_TOP_N = "top_n"
-DEFAULT_TOP_N = 50
+DEFAULT_TOP_N = 10
 
 EVENT_TRACEMALLOC_SNAPSHOT = "prolog_tracemalloc_snapshot"
 SIGNAL_PROFILER_UPDATED = f"{DOMAIN}_updated"

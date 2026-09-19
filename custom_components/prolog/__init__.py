@@ -26,7 +26,7 @@ from .const import (
 )
 from .profiler import ProfilerManager
 
-PLATFORMS = ["sensor", "number", "text"]
+PLATFORMS = ["sensor", "number", "text", "binary_sensor"]
 _LOGGER = logging.getLogger(__name__)
 
 FREQUENCY_SERVICE_SCHEMA = vol.Schema(
