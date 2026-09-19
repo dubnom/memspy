@@ -20,10 +20,13 @@ This project has no relationship to any other project on this machine.
 - `prolog.stop_tracemalloc` action — stops the tracemalloc session.
 - `number.prolog_top_n` — sets how many of the highest-memory classes receive
   class sensors and how many tracemalloc rows are returned. It defaults to `50`.
+- `text.prolog_snapshot_filter` — sets the directory prefix used to filter
+  tracemalloc rows before the top-N limit is applied. The value `*` means all
+  files; the default is `/config/custom_components`.
 - `sensor.prolog_tracemalloc` — stores the number of rows in the most recent
   tracemalloc snapshot as its state and exposes the full top-N snapshot as a
   JSON string in the `snapshot` attribute. The list is limited by the current
-  `number.prolog_top_n` value.
+  `number.prolog_top_n` value and the active directory filter.
 - `sensor.prolog` — global summary sensor. Its state is the total live object
   count. The attributes include `memory`, `garbage`, `collections`,
   `collected`, `uncollectable`, and `gc_stats`.
@@ -77,13 +80,16 @@ action: prolog.stop_tracemalloc
 The summary sensor exposes the overall GC snapshot and total object count. The
 class sensors expose memory and count for each top-memory Python class. Use
 `number.prolog_top_n` to adjust which classes are supported and how many
-tracemalloc rows are returned; the default is `50`.
+tracemalloc rows are returned; the default is `50`. Use
+`text.prolog_snapshot_filter` to restrict entries to a specific Python source
+path, or set it to `*` to include all files.
 
 ## Sensor examples
 
 - `sensor.prolog` state: total object count
 - `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`,
   `uncollectable`, `gc_stats`
+- `text.prolog_snapshot_filter` state: current include path, or `*` for all files
 - `sensor.class_001` state: estimated memory for the highest-memory class
 - `sensor.class_001` attributes: `count`, `memory`
 

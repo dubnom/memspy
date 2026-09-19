@@ -16,8 +16,10 @@ class ProfilerManager:
     def __init__(
         self,
         top_n: int = DEFAULT_TOP_N,
+        snapshot_filter: str = "/config/custom_components",
     ) -> None:
         self.top_n = top_n
+        self.snapshot_filter = snapshot_filter
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
         self._tracemalloc_started = False
@@ -38,6 +40,20 @@ class ProfilerManager:
         if top_n < 1:
             raise ValueError("top_n must be at least 1")
         self.top_n = top_n
+
+    def set_snapshot_filter(self, snapshot_filter: str | None) -> None:
+        """Set the directory prefix used to include tracemalloc entries."""
+        value = (snapshot_filter or "*").strip()
+        if not value:
+            value = "*"
+        self.snapshot_filter = value
+
+    def _matches_snapshot_filter(self, filename: str) -> bool:
+        """Return True when the filename should be retained for snapshot output."""
+        if self.snapshot_filter in ("*", ""):
+            return True
+        normalized = self.snapshot_filter.rstrip("/")
+        return filename.startswith(normalized)
 
     @property
     def class_names(self) -> list[str]:
@@ -116,21 +132,26 @@ class ProfilerManager:
         self._tracemalloc_snapshot = None
 
     def snapshot_tracemalloc(self) -> list[dict[str, object]]:
-        """Take a tracemalloc snapshot and return the top-N entries."""
+        """Take a tracemalloc snapshot and return the top-N filtered entries."""
         if not self._tracemalloc_started:
             self.start_tracemalloc()
 
         snapshot = tracemalloc.take_snapshot()
         rows: list[dict[str, object]] = []
-        for stat in snapshot.statistics("lineno")[: max(1, self.top_n)]:
+        for stat in snapshot.statistics("lineno"):
+            filename = stat.traceback[0].filename
+            if not self._matches_snapshot_filter(filename):
+                continue
             rows.append(
                 {
-                    "filename": stat.traceback[0].filename,
+                    "filename": filename,
                     "lineno": stat.traceback[0].lineno,
                     "size": stat.size,
                     "count": stat.count,
                 }
             )
+            if len(rows) >= max(1, self.top_n):
+                break
 
         self.last_tracemalloc_snapshot = rows
         self._tracemalloc_snapshot = rows

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -115,6 +116,44 @@ def test_tracemalloc_snapshot_is_stored_on_manager():
         assert len(snapshot) <= 2
     finally:
         manager.stop_tracemalloc()
+
+
+def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
+    manager = ProfilerManager(top_n=10)
+    manager.set_snapshot_filter("/tmp/prolog")
+
+    class FakeSnapshot:
+        @staticmethod
+        def statistics(_name):
+            return [
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/tmp/prolog/pkg/a.py", lineno=10),),
+                    size=50,
+                    count=2,
+                ),
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/tmp/other/pkg/b.py", lineno=20),),
+                    size=500,
+                    count=10,
+                ),
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/tmp/prolog/pkg/c.py", lineno=30),),
+                    size=25,
+                    count=1,
+                ),
+            ]
+
+    monkeypatch.setattr("custom_components.prolog.profiler.tracemalloc.take_snapshot", lambda: FakeSnapshot())
+    manager.start_tracemalloc()
+    try:
+        snapshot = manager.snapshot_tracemalloc()
+    finally:
+        manager.stop_tracemalloc()
+
+    assert [entry["filename"] for entry in snapshot] == [
+        "/tmp/prolog/pkg/a.py",
+        "/tmp/prolog/pkg/c.py",
+    ]
 
 
 def test_top_n_must_be_positive():
