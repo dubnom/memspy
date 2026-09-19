@@ -1,20 +1,24 @@
 # Prolog
 
-Current version: 1.1.8
+Current version: 1.1.9
 
 A standalone Home Assistant custom integration that reports Python object memory,
-class-level GC usage, and global garbage-collector statistics from the running
-Home Assistant process.
+class-level GC usage, global garbage-collector statistics, and tracemalloc
+snapshots from the running Home Assistant process.
 
 This project has no relationship to any other project on this machine.
 
 ## Features
 
-- `prolog.refresh` action — immediately refreshes the snapshot.
+- `prolog.refresh` action — immediately refreshes the GC snapshot.
 - `prolog.set_frequency` action — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
+- `prolog.start_tracemalloc` action — starts a tracemalloc session.
+- `prolog.snapshot_tracemalloc` action — captures a tracemalloc snapshot and
+  returns the top-N entries using the current `number.prolog_top_n` limit.
+- `prolog.stop_tracemalloc` action — stops the tracemalloc session.
 - `number.prolog_top_n` — sets how many of the highest-memory classes receive
-  class sensors. It defaults to `50`.
+  class sensors and how many tracemalloc rows are returned. It defaults to `50`.
 - `sensor.prolog` — global summary sensor. Its state is the total live object
   count. The attributes include `memory`, `garbage`, `collections`,
   `collected`, `uncollectable`, and `gc_stats`.
@@ -53,9 +57,22 @@ data:
   frequency: 60
 ```
 
+Start a tracemalloc session and snapshot the heaviest allocations:
+
+```yaml
+action: prolog.start_tracemalloc
+---
+action: prolog.snapshot_tracemalloc
+```
+
+```yaml
+action: prolog.stop_tracemalloc
+```
+
 The summary sensor exposes the overall GC snapshot and total object count. The
 class sensors expose memory and count for each top-memory Python class. Use
-`number.prolog_top_n` to adjust which classes are supported; the default is `50`.
+`number.prolog_top_n` to adjust which classes are supported and how many
+tracemalloc rows are returned; the default is `50`.
 
 ## Sensor examples
 

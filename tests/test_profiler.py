@@ -93,6 +93,19 @@ def test_top_n_filters_supported_classes_and_notifies_listeners():
     assert notifications
 
 
+def test_tracemalloc_snapshot_uses_top_n_limit():
+    manager = ProfilerManager(top_n=2)
+    manager.start_tracemalloc()
+    try:
+        snapshot = manager.snapshot_tracemalloc()
+        assert isinstance(snapshot, list)
+        assert len(snapshot) <= 2
+        assert all("filename" in item for item in snapshot)
+        assert all("size" in item for item in snapshot)
+    finally:
+        manager.stop_tracemalloc()
+
+
 def test_top_n_must_be_positive():
     manager = ProfilerManager()
 

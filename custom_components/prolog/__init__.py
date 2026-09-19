@@ -11,12 +11,16 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.core import SupportsResponse
 
 from .const import (
     ATTR_FREQUENCY,
     DOMAIN,
     SERVICE_REFRESH,
     SERVICE_SET_FREQUENCY,
+    SERVICE_SNAPSHOT_TRACEMALLOC,
+    SERVICE_START_TRACEMALLOC,
+    SERVICE_STOP_TRACEMALLOC,
     SIGNAL_PROFILER_UPDATED,
 )
 from .profiler import ProfilerManager
@@ -60,6 +64,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         manager._refresh_unsub = refresh_unsub  # noqa: SLF001
         await refresh()
 
+    async def handle_start_tracemalloc(call: ServiceCall) -> None:
+        await hass.async_add_executor_job(manager.start_tracemalloc)
+
+    async def handle_snapshot_tracemalloc(call: ServiceCall) -> dict[str, list[dict[str, object]]]:
+        snapshot = await hass.async_add_executor_job(manager.snapshot_tracemalloc)
+        return {"results": snapshot}
+
+    async def handle_stop_tracemalloc(call: ServiceCall) -> None:
+        await hass.async_add_executor_job(manager.stop_tracemalloc)
+
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, handle_refresh)
     hass.services.async_register(
         DOMAIN,
@@ -67,6 +81,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         handle_set_frequency,
         schema=FREQUENCY_SERVICE_SCHEMA,
     )
+    hass.services.async_register(DOMAIN, SERVICE_START_TRACEMALLOC, handle_start_tracemalloc)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SNAPSHOT_TRACEMALLOC,
+        handle_snapshot_tracemalloc,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(DOMAIN, SERVICE_STOP_TRACEMALLOC, handle_stop_tracemalloc)
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -83,4 +105,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
             hass.services.async_remove(DOMAIN, SERVICE_SET_FREQUENCY)
+            hass.services.async_remove(DOMAIN, SERVICE_START_TRACEMALLOC)
+            hass.services.async_remove(DOMAIN, SERVICE_SNAPSHOT_TRACEMALLOC)
+            hass.services.async_remove(DOMAIN, SERVICE_STOP_TRACEMALLOC)
     return unload_ok

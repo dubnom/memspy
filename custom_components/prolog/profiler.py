@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import gc
+import sys
+import tracemalloc
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -18,6 +20,8 @@ class ProfilerManager:
         self.top_n = top_n
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
+        self._tracemalloc_started = False
+        self._tracemalloc_snapshot: tracemalloc.Snapshot | None = None
 
     def add_refresh_listener(self, listener: Callable[[], None]) -> None:
         """Register a callback notified after each snapshot."""
@@ -61,9 +65,8 @@ class ProfilerManager:
         for obj in gc.get_objects():
             class_name = type(obj).__name__
             object_counts[class_name] = object_counts.get(class_name, 0) + 1
-            referents = gc.get_referents(obj)
             memory_counts[class_name] = memory_counts.get(class_name, 0) + (
-                referents.__sizeof__() if hasattr(referents, "__sizeof__") else 0
+                sys.getsizeof(obj) + sum(sys.getsizeof(ref) for ref in gc.get_referents(obj))
             )
 
         object_counts = dict(sorted(object_counts.items()))
@@ -93,4 +96,41 @@ class ProfilerManager:
         rows: list[dict] = []
         for name, value in report.get("memory_counts", {}).items():
             rows.append({"entity": name, "value": value})
+        return rows
+
+    def start_tracemalloc(self) -> None:
+        """Start a tracemalloc session for later snapshots."""
+        if self._tracemalloc_started:
+            return
+        tracemalloc.start()
+        self._tracemalloc_started = True
+        self._tracemalloc_snapshot = None
+
+    def stop_tracemalloc(self) -> None:
+        """Stop an active tracemalloc session and release resources."""
+        if not self._tracemalloc_started:
+            return
+        tracemalloc.stop()
+        self._tracemalloc_started = False
+        self._tracemalloc_snapshot = None
+
+    def snapshot_tracemalloc(self) -> list[dict[str, object]]:
+        """Take a tracemalloc snapshot and return the top-N entries."""
+        if not self._tracemalloc_started:
+            self.start_tracemalloc()
+
+        snapshot = tracemalloc.take_snapshot()
+        self._tracemalloc_snapshot = snapshot
+
+        top_n = max(1, self.top_n)
+        rows: list[dict[str, object]] = []
+        for stat in snapshot.statistics("lineno")[:top_n]:
+            rows.append(
+                {
+                    "filename": stat.traceback[0].filename,
+                    "lineno": stat.traceback[0].lineno,
+                    "size": stat.size,
+                    "count": stat.count,
+                }
+            )
         return rows
