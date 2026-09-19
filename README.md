@@ -13,18 +13,16 @@ This project has no relationship to any other project on this machine.
 - `prolog.refresh` action — immediately refreshes the GC snapshot.
 - `prolog.set_frequency` action — enables periodic refreshes in seconds;
   use `0` to disable automatic refreshes.
-- `prolog.start_tracemalloc` action — starts a tracemalloc session.
 - `prolog.snapshot_tracemalloc` action — captures a tracemalloc snapshot,
   fires the `prolog_tracemalloc_snapshot` event, and returns the top-N entries
   using the current `number.prolog_top_n` limit.
-- `prolog.stop_tracemalloc` action — stops the tracemalloc session.
 - `number.prolog_top_n` — sets how many of the highest-memory classes receive
   class sensors and how many tracemalloc rows are returned. It defaults to `10`.
 - `text.prolog_snapshot_filter` — sets the directory prefix used to filter
   tracemalloc rows before the top-N limit is applied. The value `*` means all
   files; the default is `/config/custom_components`.
-- `binary_sensor.prolog_tracemalloc_active` — reports whether tracemalloc is
-  currently active so the snapshot can be taken.
+- `switch.prolog_tracemalloc_active` — toggles tracemalloc on and off for the
+  current runtime so snapshots can be taken while it is active.
 - `sensor.prolog_tracemalloc` — stores the number of rows in the most recent
   tracemalloc snapshot as its state and exposes the full top-N snapshot as a
   JSON string in the `snapshot` attribute. The list is limited by the current
@@ -67,16 +65,10 @@ data:
   frequency: 60
 ```
 
-Start a tracemalloc session and snapshot the heaviest allocations:
+Enable the switch, then snapshot the heaviest allocations:
 
 ```yaml
-action: prolog.start_tracemalloc
----
 action: prolog.snapshot_tracemalloc
-```
-
-```yaml
-action: prolog.stop_tracemalloc
 ```
 
 The summary sensor exposes the overall GC snapshot and total object count. The
@@ -91,7 +83,7 @@ path, or set it to `*` to include all files.
 - `sensor.prolog` state: total object count
 - `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`,
   `uncollectable`, `gc_stats`
-- `binary_sensor.prolog_tracemalloc_active` state: `on` when tracemalloc is active
+- `switch.prolog_tracemalloc_active` state: `on` when tracemalloc is active
 - `text.prolog_snapshot_filter` state: current include path, or `*` for all files
 - `sensor.class_001` state: estimated memory for the highest-memory class
 - `sensor.class_001` attributes: `count`, `memory`
@@ -102,3 +94,7 @@ path, or set it to `*` to include all files.
 pip install -r requirements_test.txt
 pytest
 ```
+
+### Tracemalloc switch
+
+Tracemalloc follows the integration switch lifecycle: enabling the switch starts memory tracing, and disabling it stops tracing. The switch is the supported control; there are no separate start or stop services.

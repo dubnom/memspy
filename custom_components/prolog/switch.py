@@ -1,7 +1,7 @@
-"""Binary sensor showing whether tracemalloc is active."""
+"""Switch controlling whether tracemalloc is active."""
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
@@ -17,12 +17,12 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the tracemalloc activity binary sensor."""
+    """Set up the tracemalloc activity switch."""
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([TracemallocBinarySensor(manager, entry)])
+    async_add_entities([TracemallocSwitch(manager, entry)])
 
 
-class TracemallocBinarySensor(BinarySensorEntity):
+class TracemallocSwitch(SwitchEntity):
     """Reports whether the tracemalloc session is currently active."""
 
     _attr_should_poll = False
