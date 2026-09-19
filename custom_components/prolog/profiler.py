@@ -21,7 +21,8 @@ class ProfilerManager:
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
         self._tracemalloc_started = False
-        self._tracemalloc_snapshot: tracemalloc.Snapshot | None = None
+        self._tracemalloc_snapshot: list[dict[str, object]] | None = None
+        self.last_tracemalloc_snapshot: list[dict[str, object]] | None = None
 
     def add_refresh_listener(self, listener: Callable[[], None]) -> None:
         """Register a callback notified after each snapshot."""
@@ -120,11 +121,8 @@ class ProfilerManager:
             self.start_tracemalloc()
 
         snapshot = tracemalloc.take_snapshot()
-        self._tracemalloc_snapshot = snapshot
-
-        top_n = max(1, self.top_n)
         rows: list[dict[str, object]] = []
-        for stat in snapshot.statistics("lineno")[:top_n]:
+        for stat in snapshot.statistics("lineno")[: max(1, self.top_n)]:
             rows.append(
                 {
                     "filename": stat.traceback[0].filename,
@@ -133,4 +131,7 @@ class ProfilerManager:
                     "count": stat.count,
                 }
             )
+
+        self.last_tracemalloc_snapshot = rows
+        self._tracemalloc_snapshot = rows
         return rows

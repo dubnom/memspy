@@ -106,6 +106,17 @@ def test_tracemalloc_snapshot_uses_top_n_limit():
         manager.stop_tracemalloc()
 
 
+def test_tracemalloc_snapshot_is_stored_on_manager():
+    manager = ProfilerManager(top_n=2)
+    manager.start_tracemalloc()
+    try:
+        snapshot = manager.snapshot_tracemalloc()
+        assert manager.last_tracemalloc_snapshot == snapshot
+        assert len(snapshot) <= 2
+    finally:
+        manager.stop_tracemalloc()
+
+
 def test_top_n_must_be_positive():
     manager = ProfilerManager()
 

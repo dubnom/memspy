@@ -7,15 +7,15 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.core import SupportsResponse
 
 from .const import (
     ATTR_FREQUENCY,
     DOMAIN,
+    EVENT_TRACEMALLOC_SNAPSHOT,
     SERVICE_REFRESH,
     SERVICE_SET_FREQUENCY,
     SERVICE_SNAPSHOT_TRACEMALLOC,
@@ -69,6 +69,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def handle_snapshot_tracemalloc(call: ServiceCall) -> dict[str, list[dict[str, object]]]:
         snapshot = await hass.async_add_executor_job(manager.snapshot_tracemalloc)
+        hass.bus.async_fire(EVENT_TRACEMALLOC_SNAPSHOT, {"results": snapshot})
+        async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
         return {"results": snapshot}
 
     async def handle_stop_tracemalloc(call: ServiceCall) -> None:

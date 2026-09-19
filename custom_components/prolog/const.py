@@ -13,5 +13,6 @@ ATTR_FREQUENCY = "frequency"
 ATTR_TOP_N = "top_n"
 DEFAULT_TOP_N = 50
 
+EVENT_TRACEMALLOC_SNAPSHOT = "prolog_tracemalloc_snapshot"
 SIGNAL_PROFILER_UPDATED = f"{DOMAIN}_updated"
 

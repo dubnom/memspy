@@ -54,7 +54,7 @@ async def async_setup_entry(
     manager.add_refresh_listener(add_supported_entities)
     async_add_entities([])
     add_supported_entities()
-    async_add_entities([SummarySensor(manager, entry)])
+    async_add_entities([SummarySensor(manager, entry), TracemallocSensor(manager, entry)])
 
 
 class _PrologEntity(SensorEntity):
@@ -110,6 +110,31 @@ class SummarySensor(_PrologEntity):
             "uncollectable": report.get("uncollectable", 0),
             "gc_stats": report["gc_stats"],
         }
+
+
+class TracemallocSensor(_PrologEntity):
+    """Stores the most recent tracemalloc snapshot result."""
+
+    _attr_icon = "mdi:memory"
+
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
+        super().__init__(manager, entry)
+        self._attr_name = "prolog_tracemalloc"
+        self._attr_unique_id = f"{entry.entry_id}_tracemalloc"
+
+    @property
+    def native_value(self) -> int | None:
+        snapshot = self._manager.last_tracemalloc_snapshot
+        if not snapshot:
+            return None
+        return len(snapshot)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        snapshot = self._manager.last_tracemalloc_snapshot
+        if not snapshot:
+            return {}
+        return {"snapshot": snapshot, "count": len(snapshot)}
 
 
 class ObjectSensor(_PrologEntity):

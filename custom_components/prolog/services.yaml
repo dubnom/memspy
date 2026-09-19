@@ -14,3 +14,17 @@ set_frequency:
         number:
           min: 0
           mode: box
+
+start_tracemalloc:
+  name: Start tracemalloc
+  description: Start a tracemalloc session so a later snapshot can capture live allocation hotspots.
+
+snapshot_tracemalloc:
+  name: Snapshot tracemalloc
+  description: Capture the current tracemalloc snapshot and return the top-N entries based on the configured prolog_top_n value.
+  response:
+    optional: true
+
+stop_tracemalloc:
+  name: Stop tracemalloc
+  description: Stop an active tracemalloc session and release the tracking resources.
