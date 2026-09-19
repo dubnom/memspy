@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.10
+Current version: 1.1.11
 
 A standalone Home Assistant custom integration that reports Python object memory,
 class-level GC usage, global garbage-collector statistics, and tracemalloc
@@ -20,8 +20,10 @@ This project has no relationship to any other project on this machine.
 - `prolog.stop_tracemalloc` action — stops the tracemalloc session.
 - `number.prolog_top_n` — sets how many of the highest-memory classes receive
   class sensors and how many tracemalloc rows are returned. It defaults to `50`.
-- `sensor.prolog_tracemalloc` — stores the most recent tracemalloc snapshot
-  length as the state and exposes the full snapshot in the `snapshot` attribute.
+- `sensor.prolog_tracemalloc` — stores the number of rows in the most recent
+  tracemalloc snapshot as its state and exposes the full top-N snapshot as a
+  JSON string in the `snapshot` attribute. The list is limited by the current
+  `number.prolog_top_n` value.
 - `sensor.prolog` — global summary sensor. Its state is the total live object
   count. The attributes include `memory`, `garbage`, `collections`,
   `collected`, `uncollectable`, and `gc_stats`.

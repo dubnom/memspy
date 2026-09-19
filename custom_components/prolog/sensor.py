@@ -1,6 +1,8 @@
 """Sensors exposing the highest-memory garbage-collected object classes."""
 from __future__ import annotations
 
+import json
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -133,8 +135,8 @@ class TracemallocSensor(_PrologEntity):
     def extra_state_attributes(self) -> dict:
         snapshot = self._manager.last_tracemalloc_snapshot
         if not snapshot:
-            return {}
-        return {"snapshot": snapshot, "count": len(snapshot)}
+            return {"json": 0, "snapshot": "[]"}
+        return {"json": len(snapshot), "snapshot": json.dumps(snapshot)}
 
 
 class ObjectSensor(_PrologEntity):

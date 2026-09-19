@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import json
 import logging
 
 import voluptuous as vol
@@ -67,11 +68,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_start_tracemalloc(call: ServiceCall) -> None:
         await hass.async_add_executor_job(manager.start_tracemalloc)
 
-    async def handle_snapshot_tracemalloc(call: ServiceCall) -> dict[str, list[dict[str, object]]]:
+    async def handle_snapshot_tracemalloc(call: ServiceCall) -> dict[str, object]:
         snapshot = await hass.async_add_executor_job(manager.snapshot_tracemalloc)
-        hass.bus.async_fire(EVENT_TRACEMALLOC_SNAPSHOT, {"results": snapshot})
+        payload = {
+            "json": len(snapshot),
+            "snapshot": json.dumps(snapshot),
+        }
+        hass.bus.async_fire(EVENT_TRACEMALLOC_SNAPSHOT, payload)
         async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
-        return {"results": snapshot}
+        return payload
 
     async def handle_stop_tracemalloc(call: ServiceCall) -> None:
         await hass.async_add_executor_job(manager.stop_tracemalloc)
