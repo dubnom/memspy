@@ -1,92 +1,45 @@
 # Prolog
 
-Current version: 1.1.12
+Current version: 1.1.14
 
-A standalone Home Assistant custom integration that reports Python object memory,
-class-level GC usage, global garbage-collector statistics, and tracemalloc
-snapshots from the running Home Assistant process.
-
-This project has no relationship to any other project on this machine.
+A standalone Home Assistant custom integration that reports Python object memory, class-level GC usage, global garbage-collector statistics, and tracemalloc snapshots from the running Home Assistant process.
 
 ## Features
 
-- `prolog.refresh` action — immediately refreshes the GC snapshot.
-- `prolog.set_frequency` action — enables periodic refreshes in seconds;
-  use `0` to disable automatic refreshes.
-- `prolog.snapshot_tracemalloc` action — captures a tracemalloc snapshot,
-  fires the `prolog_tracemalloc_snapshot` event, and returns the top-N entries
-  using the current `number.prolog_top_n` limit.
-- `number.prolog_top_n` — sets how many of the highest-memory classes receive
-  class sensors and how many tracemalloc rows are returned. It defaults to `10`.
-- `text.prolog_snapshot_filter` — sets the directory prefix used to filter
-  tracemalloc rows before the top-N limit is applied. The value `*` means all
-  files; the default is `/config/custom_components`.
-- `switch.prolog_tracemalloc_active` — toggles tracemalloc on and off for the
-  current runtime so snapshots can be taken while it is active.
-- `sensor.prolog_tracemalloc` — stores the number of rows in the most recent
-  tracemalloc snapshot as its state and exposes the full top-N snapshot as a
-  JSON string in the `snapshot` attribute. The list is limited by the current
-  `number.prolog_top_n` value and the active directory filter.
-- `sensor.prolog` — global summary sensor. Its state is the total live object
-  count. The attributes include `memory`, `garbage`, `collections`,
-  `collected`, `uncollectable`, and `gc_stats`.
-- `sensor.class_001`, `sensor.class_002`, etc. — rank slots for the supported
-  Python classes, ordered by memory usage. The sensor state is the estimated
-  referent memory in bytes for the class currently occupying that rank. The
-  attributes include `count` (live object count) and `memory` (class total).
+- `number.prolog_memory_scan_frequency` — sets the automatic object-memory scan interval in seconds. It defaults to `30`.
+- `switch.prolog_memory_scanning` — enables or disables periodic object-memory scanning. It is enabled by default. Object-memory scanning is controlled by this frequency number and switch; there are no refresh or set-frequency services.
+- `number.prolog_top_n` — sets how many of the highest-memory classes receive class sensors and how many tracemalloc rows are returned. Its current default is `10`.
+- `text.prolog_tracemalloc_include` — controls the tracemalloc include path. Set it to `*` to include all files.
+- `text.prolog_tracemalloc_exclude` — newline-separated tracemalloc filename patterns to exclude. Blank lines and lines beginning with `#` are ignored.
+- `switch.prolog_tracemalloc_active` — starts tracemalloc when enabled and captures a final snapshot, fires the `prolog_tracemalloc_snapshot` event, and stops tracemalloc when turned off.
+- `sensor.prolog_tracemalloc` — stores the number of rows in the most recent snapshot and exposes the top-N snapshot as JSON in its `snapshot` attribute.
+- `sensor.prolog` — global summary sensor for total live objects, memory, garbage-collector statistics, and GC stats.
+- `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.
 
-The class sensors use a friendly display name equal to the plain class name
-(e.g. `dict`, `list`). Their entity IDs use a zero-padded rank so
-`sensor.class_001` is always the highest-memory class.
-
-Only the configured highest-memory classes receive class sensors. The set is
-updated dynamically on the next refresh.
+Only the configured highest-memory classes receive class sensors. The set is updated during the next object-memory scan.
 
 ## Installation
 
-Copy `custom_components/prolog` into your Home Assistant
-`config/custom_components/` directory (or install via HACS as a custom
-repository), restart Home Assistant, then add the integration from
-**Settings → Devices & Services → Add Integration → Prolog**.
+Copy `custom_components/prolog` into your Home Assistant `config/custom_components/` directory (or install via HACS as a custom repository), restart Home Assistant, then add the integration from **Settings → Devices & Services → Add Integration → Prolog**.
 
 ## Usage
 
-Refresh immediately:
+Set `number.prolog_memory_scan_frequency` to the desired interval in seconds, then use `switch.prolog_memory_scanning` to enable or disable object-memory scanning.
 
-```yaml
-action: prolog.refresh
-```
+Use the tracemalloc entities named `text.prolog_tracemalloc_include` and `text.prolog_tracemalloc_exclude` to configure filtering. Enable `switch.prolog_tracemalloc_active` to start tracing. Turning it off captures the final top-N allocation snapshot and stops tracing.
 
-Refresh automatically every 60 seconds:
-
-```yaml
-action: prolog.set_frequency
-data:
-  frequency: 60
-```
-
-Enable the switch, then snapshot the heaviest allocations:
-
-```yaml
-action: prolog.snapshot_tracemalloc
-```
-
-The summary sensor exposes the overall GC snapshot and total object count. The
-class sensors expose memory and count for each top-memory Python class. Use
-`number.prolog_top_n` to adjust which classes are supported and how many
-tracemalloc rows are returned; the default is `10`. Use
-`text.prolog_snapshot_filter` to restrict entries to a specific Python source
-path, or set it to `*` to include all files.
+The summary sensor exposes the overall GC snapshot and total object count. The class sensors expose memory and count for each top-memory Python class. Use `number.prolog_top_n` to adjust the supported classes and returned tracemalloc rows; its default is `10`.
 
 ## Sensor examples
 
 - `sensor.prolog` state: total object count
-- `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`,
-  `uncollectable`, `gc_stats`
+- `sensor.prolog` attributes: `memory`, `garbage`, `collections`, `collected`, `uncollectable`, `gc_stats`
+- `switch.prolog_memory_scanning` state: `on` when object-memory scanning is active
+- `number.prolog_memory_scan_frequency` state: scan interval in seconds
 - `switch.prolog_tracemalloc_active` state: `on` when tracemalloc is active
-- `text.prolog_snapshot_filter` state: current include path, or `*` for all files
+- `text.prolog_tracemalloc_include` state: current include path
+- `text.prolog_tracemalloc_exclude` state: current exclusion patterns
 - `sensor.class_001` state: estimated memory for the highest-memory class
-- `sensor.class_001` attributes: `count`, `memory`
 
 ## Development
 
@@ -94,7 +47,3 @@ path, or set it to `*` to include all files.
 pip install -r requirements_test.txt
 pytest
 ```
-
-### Tracemalloc switch
-
-Tracemalloc follows the integration switch lifecycle: enabling the switch starts memory tracing, and disabling it stops tracing. The switch is the supported control; there are no separate start or stop services.

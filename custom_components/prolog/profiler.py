@@ -7,7 +7,7 @@ import tracemalloc
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from .const import DEFAULT_TOP_N
+from .const import DEFAULT_REFRESH_FREQUENCY, DEFAULT_TOP_N
 
 
 class ProfilerManager:
@@ -17,9 +17,13 @@ class ProfilerManager:
         self,
         top_n: int = DEFAULT_TOP_N,
         snapshot_filter: str = "/config/custom_components",
+        snapshot_exclusions: str = "",
     ) -> None:
         self.top_n = top_n
         self.snapshot_filter = snapshot_filter
+        self.snapshot_exclusions = self._parse_snapshot_exclusions(snapshot_exclusions)
+        self.refresh_frequency = DEFAULT_REFRESH_FREQUENCY
+        self.memory_scanning = True
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
         self._tracemalloc_started = False
@@ -48,12 +52,33 @@ class ProfilerManager:
             value = "*"
         self.snapshot_filter = value
 
-    def _matches_snapshot_filter(self, filename: str) -> bool:
-        """Return True when the filename should be retained for snapshot output."""
-        if self.snapshot_filter in ("*", ""):
-            return True
-        normalized = self.snapshot_filter.rstrip("/")
-        return filename.startswith(normalized)
+    @staticmethod
+    def _parse_snapshot_exclusions(value: str | None) -> list[str]:
+        """Parse newline-separated tracemalloc exclusion patterns."""
+        return [
+            line.strip()
+            for line in (value or "").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+
+    def set_snapshot_exclusions(self, value: str | None) -> None:
+        """Set newline-separated tracemalloc exclusion patterns."""
+        self.snapshot_exclusions = self._parse_snapshot_exclusions(value)
+
+    def _tracemalloc_filters(self) -> list[tracemalloc.Filter]:
+        """Build native tracemalloc include and exclusion filters."""
+        filters: list[tracemalloc.Filter] = []
+        if self.snapshot_filter not in ("*", ""):
+            filters.append(
+                tracemalloc.Filter(
+                    True, f"{self.snapshot_filter.rstrip('/')}/*"
+                )
+            )
+        filters.extend(
+            tracemalloc.Filter(False, pattern)
+            for pattern in self.snapshot_exclusions
+        )
+        return filters
 
     @property
     def class_names(self) -> list[str]:
@@ -137,11 +162,12 @@ class ProfilerManager:
             self.start_tracemalloc()
 
         snapshot = tracemalloc.take_snapshot()
+        filters = self._tracemalloc_filters()
+        if filters:
+            snapshot = snapshot.filter_traces(filters)
         rows: list[dict[str, object]] = []
         for stat in snapshot.statistics("lineno"):
             filename = stat.traceback[0].filename
-            if not self._matches_snapshot_filter(filename):
-                continue
             rows.append(
                 {
                     "filename": filename,

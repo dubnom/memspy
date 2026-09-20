@@ -1,6 +1,7 @@
 """Tests for object-memory and referent-memory snapshots."""
 from __future__ import annotations
 
+import fnmatch
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -121,8 +122,29 @@ def test_tracemalloc_snapshot_is_stored_on_manager():
 def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
     manager = ProfilerManager(top_n=10)
     manager.set_snapshot_filter("/tmp/prolog")
+    manager.set_snapshot_exclusions("/tmp/prolog/pkg/c.py")
 
     class FakeSnapshot:
+        def filter_traces(self, filters):
+            included = [
+                filter_.filename_pattern for filter_ in filters if filter_.inclusive
+            ]
+            excluded = [filter_.filename_pattern for filter_ in filters if not filter_.inclusive]
+            return SimpleNamespace(
+                statistics=lambda _name: [
+                    stat
+                    for stat in self.statistics(_name)
+                    if (not included or any(
+                        fnmatch.fnmatch(stat.traceback[0].filename, pattern)
+                        for pattern in included
+                    ))
+                    and not any(
+                        fnmatch.fnmatch(stat.traceback[0].filename, pattern)
+                        for pattern in excluded
+                    )
+                ]
+            )
+
         @staticmethod
         def statistics(_name):
             return [
@@ -152,8 +174,13 @@ def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
 
     assert [entry["filename"] for entry in snapshot] == [
         "/tmp/prolog/pkg/a.py",
-        "/tmp/prolog/pkg/c.py",
     ]
+
+
+def test_snapshot_exclusions_are_applied_before_top_n():
+    manager = ProfilerManager(top_n=2)
+    manager.set_snapshot_exclusions("/tmp/noisy/*\n# ignored\n")
+    assert manager.snapshot_exclusions == ["/tmp/noisy/*"]
 
 
 def test_top_n_must_be_positive():

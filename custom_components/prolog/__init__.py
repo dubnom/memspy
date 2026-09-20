@@ -2,24 +2,19 @@
 from __future__ import annotations
 
 from datetime import timedelta
-import json
 import logging
 
-import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
-    ATTR_FREQUENCY,
     DOMAIN,
-    EVENT_TRACEMALLOC_SNAPSHOT,
-    SERVICE_REFRESH,
-    SERVICE_SET_FREQUENCY,
-    SERVICE_SNAPSHOT_TRACEMALLOC,
+    SIGNAL_REFRESH_CONFIG,
     SIGNAL_PROFILER_UPDATED,
 )
 from .profiler import ProfilerManager
@@ -27,9 +22,6 @@ from .profiler import ProfilerManager
 PLATFORMS = ["sensor", "number", "text", "switch"]
 _LOGGER = logging.getLogger(__name__)
 
-FREQUENCY_SERVICE_SCHEMA = vol.Schema(
-    {vol.Required(ATTR_FREQUENCY): vol.All(vol.Coerce(int), vol.Range(min=0))}
-)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Prolog from a config entry."""
     manager = ProfilerManager()
@@ -46,46 +38,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Refreshing Prolog sensors on the configured interval")
         await refresh()
 
-    async def handle_refresh(call: ServiceCall) -> None:
-        await refresh()
-
-    async def handle_set_frequency(call: ServiceCall) -> None:
+    @callback
+    def configure_refresh() -> None:
         nonlocal refresh_unsub
         if refresh_unsub:
             refresh_unsub()
             refresh_unsub = None
-        frequency = call.data[ATTR_FREQUENCY]
-        if frequency:
+        if manager.memory_scanning:
             refresh_unsub = async_track_time_interval(
-                hass, handle_interval, timedelta(seconds=frequency)
+                hass,
+                handle_interval,
+                timedelta(seconds=manager.refresh_frequency),
             )
-            _LOGGER.debug("Configured Prolog sensor refresh every %s seconds", frequency)
         manager._refresh_unsub = refresh_unsub  # noqa: SLF001
-        await refresh()
 
-    async def handle_snapshot_tracemalloc(call: ServiceCall) -> dict[str, object]:
-        snapshot = await hass.async_add_executor_job(manager.snapshot_tracemalloc)
-        payload = {
-            "json": len(snapshot),
-            "snapshot": json.dumps(snapshot),
-        }
-        hass.bus.async_fire(EVENT_TRACEMALLOC_SNAPSHOT, payload)
-        async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
-        return payload
-
-    hass.services.async_register(DOMAIN, SERVICE_REFRESH, handle_refresh)
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SET_FREQUENCY,
-        handle_set_frequency,
-        schema=FREQUENCY_SERVICE_SCHEMA,
+    config_unsub = async_dispatcher_connect(
+        hass, SIGNAL_REFRESH_CONFIG, configure_refresh
     )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SNAPSHOT_TRACEMALLOC,
-        handle_snapshot_tracemalloc,
-        supports_response=SupportsResponse.OPTIONAL,
-    )
+    manager._config_unsub = config_unsub  # noqa: SLF001
+    configure_refresh()
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -96,11 +67,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         manager = hass.data[DOMAIN].pop(entry.entry_id, None)
+        config_unsub = getattr(manager, "_config_unsub", None)
+        if config_unsub:
+            config_unsub()
         refresh_unsub = getattr(manager, "_refresh_unsub", None)
         if refresh_unsub:
             refresh_unsub()
-        if not hass.data[DOMAIN]:
-            hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_FREQUENCY)
-            hass.services.async_remove(DOMAIN, SERVICE_SNAPSHOT_TRACEMALLOC)
     return unload_ok
