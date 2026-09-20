@@ -23,7 +23,7 @@ class ProfilerManager:
         self.snapshot_filter = snapshot_filter
         self.snapshot_exclusions = self._parse_snapshot_exclusions(snapshot_exclusions)
         self.refresh_frequency = DEFAULT_REFRESH_FREQUENCY
-        self.memory_scanning = True
+        self.memory_scanning = False
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
         self._tracemalloc_started = False

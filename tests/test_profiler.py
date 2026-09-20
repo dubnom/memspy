@@ -189,6 +189,12 @@ def test_snapshot_exclusions_default_to_empty():
     assert manager.snapshot_exclusions == []
 
 
+def test_memory_scanning_defaults_to_off():
+    manager = ProfilerManager()
+
+    assert manager.memory_scanning is False
+
+
 def test_top_n_must_be_positive():
     manager = ProfilerManager()
 
