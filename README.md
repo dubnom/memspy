@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.16
+Current version: 1.1.17
 
 A standalone Home Assistant custom integration that reports Python object memory, class-level GC usage, global garbage-collector statistics, and tracemalloc snapshots from the running Home Assistant process.
 
@@ -17,6 +17,8 @@ A standalone Home Assistant custom integration that reports Python object memory
 - `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.
 
 Only the configured highest-memory classes receive class sensors. The set is updated during the next object-memory scan.
+
+Class sensor friendly names are the raw Python class names, without the `Prolog` prefix.
 
 ## Installation
 

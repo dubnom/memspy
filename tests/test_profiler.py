@@ -9,6 +9,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from custom_components.prolog.profiler import ProfilerManager
+from custom_components.prolog.sensor import ObjectSensor
 
 
 def _parsed_entities(report) -> list[dict[str, object]]:
@@ -193,6 +194,18 @@ def test_memory_scanning_defaults_to_off():
     manager = ProfilerManager()
 
     assert manager.memory_scanning is False
+
+
+def test_class_sensor_friendly_name_has_no_prolog_prefix():
+    manager = ProfilerManager()
+    manager.last_report = {
+        "object_counts": {"dict": 1},
+        "memory_counts": {"dict": 128},
+    }
+    sensor = ObjectSensor(manager, SimpleNamespace(entry_id="test"), 1)
+
+    assert sensor.name == "dict"
+    assert sensor._attr_has_entity_name is False
 
 
 def test_top_n_must_be_positive():

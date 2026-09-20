@@ -142,6 +142,7 @@ class TracemallocSensor(_PrologEntity):
 class ObjectSensor(_PrologEntity):
     """Reports memory usage and object count for one Python object class."""
 
+    _attr_has_entity_name = False
     _attr_device_class = SensorDeviceClass.DATA_SIZE
     _attr_icon = "mdi:memory"
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -151,7 +152,6 @@ class ObjectSensor(_PrologEntity):
         super().__init__(manager, entry)
         self._rank = rank
         self._attr_unique_id = f"{entry.entry_id}_class_{rank:03d}"
-        self._attr_has_entity_name = False
 
     @property
     def suggested_object_id(self) -> str:
