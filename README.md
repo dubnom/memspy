@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.17
+Current version: 1.1.18
 
 A standalone Home Assistant custom integration that reports Python object memory, class-level GC usage, global garbage-collector statistics, and tracemalloc snapshots from the running Home Assistant process.
 
