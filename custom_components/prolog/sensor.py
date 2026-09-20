@@ -10,9 +10,9 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SIGNAL_PROFILER_UPDATED
@@ -26,6 +26,7 @@ async def async_setup_entry(
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
     entities: dict[int, ObjectSensor] = {}
     registry = er.async_get(hass)
+    current_class_count = len(manager.class_names)
 
     for rank, class_name in enumerate(manager.class_names, start=1):
         old_unique_id = f"{entry.entry_id}_{class_name}"
@@ -42,6 +43,22 @@ async def async_setup_entry(
                     new_entity_id=target_entity_id,
                     new_unique_id=new_unique_id,
                 )
+
+    for entity in list(registry.entities.values()):
+        if entity.config_entry_id != entry.entry_id or entity.domain != "sensor":
+            continue
+        if entity.unique_id.startswith(f"{entry.entry_id}_class_"):
+            try:
+                rank = int(entity.unique_id.rsplit("_", 1)[-1])
+            except ValueError:
+                continue
+            if rank > current_class_count:
+                registry.async_remove(entity.entity_id)
+        elif entity.unique_id.startswith(f"{entry.entry_id}_") and entity.unique_id not in {
+            f"{entry.entry_id}_summary",
+            f"{entry.entry_id}_tracemalloc",
+        }:
+            registry.async_remove(entity.entity_id)
 
     def add_supported_entities() -> None:
         new_entities = [

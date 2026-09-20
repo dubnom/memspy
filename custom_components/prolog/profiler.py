@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 
 from .const import DEFAULT_REFRESH_FREQUENCY, DEFAULT_TOP_N
 
+DEFAULT_SNAPSHOT_EXCLUSIONS = (
+    "/config/custom_components/prolog/*",
+    "/config/custom_components/spook/*",
+)
+
 
 class ProfilerManager:
     """Collects current object count and referent memory snapshots."""
@@ -26,8 +31,9 @@ class ProfilerManager:
         self.memory_scanning = False
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []
+        self._refresh_unsub: Callable[[], None] | None = None
+        self._config_unsub: Callable[[], None] | None = None
         self._tracemalloc_started = False
-        self._tracemalloc_snapshot: list[dict[str, object]] | None = None
         self.last_tracemalloc_snapshot: list[dict[str, object]] | None = None
 
     def add_refresh_listener(self, listener: Callable[[], None]) -> None:
@@ -76,7 +82,7 @@ class ProfilerManager:
             )
         filters.extend(
             tracemalloc.Filter(False, pattern)
-            for pattern in self.snapshot_exclusions
+            for pattern in (*DEFAULT_SNAPSHOT_EXCLUSIONS, *self.snapshot_exclusions)
         )
         return filters
 
@@ -133,20 +139,12 @@ class ProfilerManager:
         self.last_report = report
         return report
 
-    def _parse_report(self, report: dict) -> list[dict]:
-        """Convert memory values into entity/value rows for test and UI display."""
-        rows: list[dict] = []
-        for name, value in report.get("memory_counts", {}).items():
-            rows.append({"entity": name, "value": value})
-        return rows
-
     def start_tracemalloc(self) -> None:
         """Start a tracemalloc session for later snapshots."""
         if self._tracemalloc_started:
             return
         tracemalloc.start()
         self._tracemalloc_started = True
-        self._tracemalloc_snapshot = None
 
     def stop_tracemalloc(self) -> None:
         """Stop an active tracemalloc session and release resources."""
@@ -154,7 +152,11 @@ class ProfilerManager:
             return
         tracemalloc.stop()
         self._tracemalloc_started = False
-        self._tracemalloc_snapshot = None
+
+    @property
+    def tracemalloc_active(self) -> bool:
+        """Return whether tracemalloc is currently collecting allocations."""
+        return self._tracemalloc_started
 
     def snapshot_tracemalloc(self) -> list[dict[str, object]]:
         """Take a tracemalloc snapshot and return the top-N filtered entries."""
@@ -180,5 +182,4 @@ class ProfilerManager:
                 break
 
         self.last_tracemalloc_snapshot = rows
-        self._tracemalloc_snapshot = rows
         return rows

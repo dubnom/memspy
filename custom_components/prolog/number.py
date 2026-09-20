@@ -4,9 +4,9 @@ from __future__ import annotations
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
     ATTR_TOP_N,
@@ -14,6 +14,7 @@ from .const import (
     SIGNAL_REFRESH_CONFIG,
     SIGNAL_PROFILER_UPDATED,
 )
+from .helpers import async_refresh_manager
 from .profiler import ProfilerManager
 
 
@@ -54,9 +55,7 @@ class TopNNumber(NumberEntity):
         """Update the bound and refresh object sensors."""
         value = int(value)
         self._manager.set_top_n(value)
-        await self.hass.async_add_executor_job(self._manager.refresh)
-        self._manager.notify_refresh_listeners()
-        async_dispatcher_send(self.hass, SIGNAL_PROFILER_UPDATED)
+        await async_refresh_manager(self.hass, self._manager)
 
 
 class RefreshFrequencyNumber(NumberEntity):

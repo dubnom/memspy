@@ -16,6 +16,7 @@ from .const import (
     SIGNAL_PROFILER_UPDATED,
     SIGNAL_REFRESH_CONFIG,
 )
+from .helpers import async_refresh_manager
 from .profiler import ProfilerManager
 
 
@@ -63,9 +64,7 @@ class MemoryScanningSwitch(SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         self._manager.memory_scanning = True
         async_dispatcher_send(self.hass, SIGNAL_REFRESH_CONFIG)
-        await self.hass.async_add_executor_job(self._manager.refresh)
-        self._manager.notify_refresh_listeners()
-        async_dispatcher_send(self.hass, SIGNAL_PROFILER_UPDATED)
+        await async_refresh_manager(self.hass, self._manager)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -99,7 +98,7 @@ class TracemallocSwitch(SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        return self._manager._tracemalloc_started  # noqa: SLF001
+        return self._manager.tracemalloc_active
 
     async def async_turn_on(self, **kwargs) -> None:
         await self.hass.async_add_executor_job(self._manager.start_tracemalloc)
@@ -108,7 +107,7 @@ class TracemallocSwitch(SwitchEntity):
 
     async def async_turn_off(self, **kwargs) -> None:
         try:
-            if self._manager._tracemalloc_started:  # noqa: SLF001
+            if self._manager.tracemalloc_active:
                 snapshot = await self.hass.async_add_executor_job(
                     self._manager.snapshot_tracemalloc
                 )

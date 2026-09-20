@@ -6,21 +6,52 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.dispatcher import (
-    async_dispatcher_connect,
-    async_dispatcher_send,
-)
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     DOMAIN,
     SIGNAL_REFRESH_CONFIG,
-    SIGNAL_PROFILER_UPDATED,
 )
+from .helpers import async_refresh_manager
 from .profiler import ProfilerManager
 
 PLATFORMS = ["sensor", "number", "text", "switch"]
 _LOGGER = logging.getLogger(__name__)
+
+
+def _cleanup_legacy_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Migrate renamed text entities and remove obsolete binary sensors."""
+    registry = er.async_get(hass)
+    legacy_text_entities = {
+        "snapshot_filter": "tracemalloc_include",
+        "snapshot_exclusions": "tracemalloc_exclude",
+    }
+    for old_name, new_name in legacy_text_entities.items():
+        old_unique_id = f"{entry.entry_id}_{old_name}"
+        old_entity_id = registry.async_get_entity_id("text", DOMAIN, old_unique_id)
+        if old_entity_id is None:
+            continue
+        new_unique_id = f"{entry.entry_id}_{new_name}"
+        new_entity_id = registry.async_get_entity_id("text", DOMAIN, new_unique_id)
+        target_entity_id = f"text.prolog_{new_name}"
+        if new_entity_id is None and registry.async_get(target_entity_id) is None:
+            registry.async_update_entity(
+                old_entity_id,
+                new_entity_id=target_entity_id,
+                new_unique_id=new_unique_id,
+            )
+        else:
+            registry.async_remove(old_entity_id)
+
+    old_binary_unique_id = f"{entry.entry_id}_tracemalloc_active"
+    old_binary_entity_id = registry.async_get_entity_id(
+        "binary_sensor", DOMAIN, old_binary_unique_id
+    )
+    if old_binary_entity_id is not None:
+        registry.async_remove(old_binary_entity_id)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Prolog from a config entry."""
@@ -29,9 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     refresh_unsub = None
 
     async def refresh() -> None:
-        await hass.async_add_executor_job(manager.refresh)
-        manager.notify_refresh_listeners()
-        async_dispatcher_send(hass, SIGNAL_PROFILER_UPDATED)
+        await async_refresh_manager(hass, manager)
 
     async def handle_interval(_now) -> None:
         """Refresh sensors when the configured interval elapses."""
@@ -50,13 +79,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 handle_interval,
                 timedelta(seconds=manager.refresh_frequency),
             )
-        manager._refresh_unsub = refresh_unsub  # noqa: SLF001
+        manager._refresh_unsub = refresh_unsub
 
     config_unsub = async_dispatcher_connect(
         hass, SIGNAL_REFRESH_CONFIG, configure_refresh
     )
-    manager._config_unsub = config_unsub  # noqa: SLF001
+    manager._config_unsub = config_unsub
     configure_refresh()
+    _cleanup_legacy_entities(hass, entry)
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
