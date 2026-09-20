@@ -183,6 +183,12 @@ def test_snapshot_exclusions_are_applied_before_top_n():
     assert manager.snapshot_exclusions == ["/tmp/noisy/*"]
 
 
+def test_snapshot_exclusions_default_to_empty():
+    manager = ProfilerManager()
+
+    assert manager.snapshot_exclusions == []
+
+
 def test_top_n_must_be_positive():
     manager = ProfilerManager()
 
