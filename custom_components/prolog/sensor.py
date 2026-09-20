@@ -67,13 +67,28 @@ async def async_setup_entry(
             if rank not in entities
         ]
         entities.update({entity.rank: entity for entity in new_entities})
+        for entity in entities.values():
+            class_name = entity.class_name
+            if class_name is None:
+                continue
+            entity_id = registry.async_get_entity_id(
+                "sensor", DOMAIN, entity.unique_id
+            )
+            if entity_id is not None:
+                registry.async_update_entity(entity_id, name=class_name)
         if new_entities:
             async_add_entities(new_entities)
 
     manager.add_refresh_listener(add_supported_entities)
     async_add_entities([])
     add_supported_entities()
-    async_add_entities([SummarySensor(manager, entry), TracemallocSensor(manager, entry)])
+    async_add_entities(
+        [
+            SummarySensor(manager, entry),
+            TracemallocSensor(manager, entry),
+            TracemallocDurationSensor(manager, entry),
+        ]
+    )
 
 
 class _PrologEntity(SensorEntity):
@@ -154,6 +169,24 @@ class TracemallocSensor(_PrologEntity):
         if not snapshot:
             return {"json": 0, "snapshot": "[]"}
         return {"json": len(snapshot), "snapshot": json.dumps(snapshot)}
+
+
+class TracemallocDurationSensor(_PrologEntity):
+    """Reports the duration of the current or most recent tracemalloc session."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_icon = "mdi:timer-outline"
+    _attr_native_unit_of_measurement = "s"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
+        super().__init__(manager, entry)
+        self._attr_name = "prolog_tracemalloc_duration"
+        self._attr_unique_id = f"{entry.entry_id}_tracemalloc_duration"
+
+    @property
+    def native_value(self) -> float:
+        return self._manager.tracemalloc_elapsed
 
 
 class ObjectSensor(_PrologEntity):

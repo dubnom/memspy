@@ -106,6 +106,27 @@ def test_tracemalloc_snapshot_is_stored_on_manager():
         manager.stop_tracemalloc()
 
 
+def test_tracemalloc_elapsed_time_is_frozen_after_stop(monkeypatch):
+    clock = iter([100.0, 100.0, 103.5])
+    current_time = [100.0]
+
+    def fake_monotonic():
+        current_time[0] = next(clock, current_time[0])
+        return current_time[0]
+
+    monkeypatch.setattr(
+        "custom_components.prolog.profiler.time.monotonic", fake_monotonic
+    )
+    manager = ProfilerManager()
+
+    manager.start_tracemalloc()
+    assert manager.tracemalloc_elapsed == 0.0
+    manager.stop_tracemalloc()
+
+    assert manager.tracemalloc_elapsed == 3.5
+    assert manager.tracemalloc_active is False
+
+
 def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
     manager = ProfilerManager(top_n=10)
     manager.set_snapshot_filter("/tmp/prolog")
@@ -274,6 +295,17 @@ def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
         "text.prolog_snapshot_exclusions",
         "binary_sensor.prolog_tracemalloc_active",
     ]
+
+
+def test_class_entity_registry_name_is_class_name():
+    manager = ProfilerManager()
+    manager.last_report = {
+        "object_counts": {"dict": 1},
+        "memory_counts": {"dict": 128},
+    }
+    sensor = ObjectSensor(manager, SimpleNamespace(entry_id="entry"), 1)
+
+    assert sensor.name == "dict"
 
 
 def test_top_n_must_be_positive():

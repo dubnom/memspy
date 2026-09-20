@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gc
 import sys
+import time
 import tracemalloc
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -34,6 +35,8 @@ class ProfilerManager:
         self._refresh_unsub: Callable[[], None] | None = None
         self._config_unsub: Callable[[], None] | None = None
         self._tracemalloc_started = False
+        self._tracemalloc_started_at: float | None = None
+        self._tracemalloc_elapsed = 0.0
         self.last_tracemalloc_snapshot: list[dict[str, object]] | None = None
 
     def add_refresh_listener(self, listener: Callable[[], None]) -> None:
@@ -145,18 +148,30 @@ class ProfilerManager:
             return
         tracemalloc.start()
         self._tracemalloc_started = True
+        self._tracemalloc_started_at = time.monotonic()
+        self._tracemalloc_elapsed = 0.0
 
     def stop_tracemalloc(self) -> None:
         """Stop an active tracemalloc session and release resources."""
         if not self._tracemalloc_started:
             return
+        if self._tracemalloc_started_at is not None:
+            self._tracemalloc_elapsed = time.monotonic() - self._tracemalloc_started_at
         tracemalloc.stop()
         self._tracemalloc_started = False
+        self._tracemalloc_started_at = None
 
     @property
     def tracemalloc_active(self) -> bool:
         """Return whether tracemalloc is currently collecting allocations."""
         return self._tracemalloc_started
+
+    @property
+    def tracemalloc_elapsed(self) -> float:
+        """Return elapsed seconds for the current or most recent session."""
+        if self._tracemalloc_started and self._tracemalloc_started_at is not None:
+            return time.monotonic() - self._tracemalloc_started_at
+        return self._tracemalloc_elapsed
 
     def snapshot_tracemalloc(self) -> list[dict[str, object]]:
         """Take a tracemalloc snapshot and return the top-N filtered entries."""

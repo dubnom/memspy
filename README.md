@@ -1,6 +1,6 @@
 # Prolog
 
-Current version: 1.1.18
+Current version: 1.1.19
 
 A standalone Home Assistant custom integration that reports Python object memory, class-level GC usage, global garbage-collector statistics, and tracemalloc snapshots from the running Home Assistant process.
 
@@ -12,6 +12,7 @@ A standalone Home Assistant custom integration that reports Python object memory
 - `text.prolog_tracemalloc_include` — controls the tracemalloc include path. Set it to `*` to include all files.
 - `text.prolog_tracemalloc_exclude` — newline-separated tracemalloc filename patterns to exclude. It defaults to an empty value; Prolog and Spook are always excluded in addition to any patterns entered here. Blank lines and lines beginning with `#` are ignored.
 - `switch.prolog_tracemalloc_active` — starts tracemalloc when enabled and captures a final snapshot, fires the `prolog_tracemalloc_snapshot` event, and stops tracemalloc when turned off.
+- `sensor.prolog_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
 - `sensor.prolog_tracemalloc` — stores the number of rows in the most recent snapshot and exposes the top-N snapshot as JSON in its `snapshot` attribute.
 - `sensor.prolog` — global summary sensor for total live objects, memory, garbage-collector statistics, and GC stats.
 - `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.
@@ -39,6 +40,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 - `switch.prolog_memory_scanning` state: `on` when object-memory scanning is active
 - `number.prolog_memory_scan_frequency` state: scan interval in seconds
 - `switch.prolog_tracemalloc_active` state: `on` when tracemalloc is active
+- `sensor.prolog_tracemalloc_duration` state: elapsed tracemalloc time in seconds
 - `text.prolog_tracemalloc_include` state: current include path
 - `text.prolog_tracemalloc_exclude` state: current exclusion patterns
 - `sensor.class_001` state: estimated memory for the highest-memory class
