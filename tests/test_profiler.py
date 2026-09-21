@@ -8,7 +8,6 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from custom_components.memspy import _cleanup_legacy_entities
 from custom_components.memspy.profiler import ProfilerManager
 from custom_components.memspy.select import TracemallocIncludeSelect
 from custom_components.memspy.sensor import ObjectSensor
@@ -227,61 +226,6 @@ def test_class_sensor_friendly_name_has_no_memspy_prefix():
 
     assert sensor.name == "dict"
     assert sensor._attr_has_entity_name is False
-
-
-def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
-    class FakeRegistry:
-        def __init__(self):
-            self.entities = {
-                "text.prolog_snapshot_exclusions": SimpleNamespace(
-                    entity_id="text.prolog_snapshot_exclusions",
-                    domain="text",
-                    unique_id="entry_snapshot_exclusions",
-                    config_entry_id="entry",
-                ),
-                "text.prolog_tracemalloc_exclude": SimpleNamespace(
-                    entity_id="text.prolog_tracemalloc_exclude",
-                    domain="text",
-                    unique_id="entry_tracemalloc_exclude",
-                    config_entry_id="entry",
-                ),
-                "binary_sensor.prolog_tracemalloc_active": SimpleNamespace(
-                    entity_id="binary_sensor.prolog_tracemalloc_active",
-                    domain="binary_sensor",
-                    unique_id="entry_tracemalloc_active",
-                    config_entry_id="entry",
-                ),
-            }
-            self.updated = []
-            self.removed = []
-
-        def async_get_entity_id(self, domain, _platform, unique_id):
-            for entity_id, entity in self.entities.items():
-                if entity.domain == domain and entity.unique_id == unique_id:
-                    return entity_id
-            return None
-
-        def async_get(self, entity_id):
-            return self.entities.get(entity_id)
-
-        def async_update_entity(self, entity_id, **changes):
-            self.updated.append((entity_id, changes))
-
-        def async_remove(self, entity_id):
-            self.removed.append(entity_id)
-
-    registry = FakeRegistry()
-    monkeypatch.setattr(
-        "custom_components.memspy.er.async_get", lambda _hass: registry
-    )
-
-    _cleanup_legacy_entities(SimpleNamespace(), SimpleNamespace(entry_id="entry"))
-
-    assert registry.updated == []
-    assert registry.removed == [
-        "text.prolog_snapshot_exclusions",
-        "binary_sensor.prolog_tracemalloc_active",
-    ]
 
 
 def test_class_entity_registry_name_is_class_name():

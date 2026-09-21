@@ -28,22 +28,6 @@ async def async_setup_entry(
     registry = er.async_get(hass)
     current_class_count = len(manager.class_names)
 
-    for rank, class_name in enumerate(manager.class_names, start=1):
-        old_unique_id = f"{entry.entry_id}_{class_name}"
-        new_unique_id = f"{entry.entry_id}_class_{rank:03d}"
-        entity_id = registry.async_get_entity_id("sensor", "prolog", old_unique_id)
-        if entity_id:
-            target_entity_id = f"sensor.class_{rank:03d}"
-            target_unique_id = registry.async_get_entity_id(
-                "sensor", DOMAIN, new_unique_id
-            )
-            if target_unique_id is None or target_unique_id == entity_id:
-                registry.async_update_entity(
-                    entity_id,
-                    new_entity_id=target_entity_id,
-                    new_unique_id=new_unique_id,
-                )
-
     for entity in list(registry.entities.values()):
         if entity.config_entry_id != entry.entry_id or entity.domain != "sensor":
             continue
