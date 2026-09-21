@@ -1,4 +1,4 @@
-"""Number entities controlling Prolog settings."""
+"""Number entities controlling Memspy settings."""
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -41,10 +41,10 @@ class TopNNumber(NumberEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_top_n"
+        self._attr_name = "memspy_top_n"
         self._attr_unique_id = f"{entry.entry_id}_top_n"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     @property
@@ -68,11 +68,11 @@ class RefreshFrequencyNumber(NumberEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_memory_scan_frequency"
+        self._attr_name = "memspy_memory_scan_frequency"
         self._attr_unique_id = f"{entry.entry_id}_memory_scan_frequency"
         self._attr_native_unit_of_measurement = "s"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     @property

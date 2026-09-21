@@ -8,9 +8,9 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from custom_components.prolog import _cleanup_legacy_entities
-from custom_components.prolog.profiler import ProfilerManager
-from custom_components.prolog.sensor import ObjectSensor
+from custom_components.memspy import _cleanup_legacy_entities
+from custom_components.memspy.profiler import ProfilerManager
+from custom_components.memspy.sensor import ObjectSensor
 
 
 def _parsed_entities(report) -> list[dict[str, object]]:
@@ -115,7 +115,7 @@ def test_tracemalloc_elapsed_time_is_frozen_after_stop(monkeypatch):
         return current_time[0]
 
     monkeypatch.setattr(
-        "custom_components.prolog.profiler.time.monotonic", fake_monotonic
+        "custom_components.memspy.profiler.time.monotonic", fake_monotonic
     )
     manager = ProfilerManager()
 
@@ -173,7 +173,7 @@ def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
                 ),
             ]
 
-    monkeypatch.setattr("custom_components.prolog.profiler.tracemalloc.take_snapshot", lambda: FakeSnapshot())
+    monkeypatch.setattr("custom_components.memspy.profiler.tracemalloc.take_snapshot", lambda: FakeSnapshot())
     manager.start_tracemalloc()
     try:
         snapshot = manager.snapshot_tracemalloc()
@@ -204,7 +204,7 @@ def test_builtin_snapshot_exclusions_are_combined_with_user_filters():
     filters = manager._tracemalloc_filters()
 
     assert [filter_.filename_pattern for filter_ in filters if not filter_.inclusive] == [
-        "/config/custom_components/prolog/*",
+        "/config/custom_components/memspy/*",
         "/config/custom_components/spook/*",
         "/config/custom_components/noisy/*",
     ]
@@ -216,7 +216,7 @@ def test_memory_scanning_defaults_to_off():
     assert manager.memory_scanning is False
 
 
-def test_class_sensor_friendly_name_has_no_prolog_prefix():
+def test_class_sensor_friendly_name_has_no_memspy_prefix():
     manager = ProfilerManager()
     manager.last_report = {
         "object_counts": {"dict": 1},
@@ -277,7 +277,7 @@ def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
 
     registry = FakeRegistry()
     monkeypatch.setattr(
-        "custom_components.prolog.er.async_get", lambda _hass: registry
+        "custom_components.memspy.er.async_get", lambda _hass: registry
     )
 
     _cleanup_legacy_entities(SimpleNamespace(), SimpleNamespace(entry_id="entry"))
@@ -286,7 +286,7 @@ def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
         (
             "text.prolog_snapshot_filter",
             {
-                "new_entity_id": "text.prolog_tracemalloc_include",
+                "new_entity_id": "text.memspy_tracemalloc_include",
                 "new_unique_id": "entry_tracemalloc_include",
             },
         )

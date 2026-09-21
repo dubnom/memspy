@@ -40,10 +40,10 @@ class MemoryScanningSwitch(SwitchEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_memory_scanning"
+        self._attr_name = "memspy_memory_scanning"
         self._attr_unique_id = f"{entry.entry_id}_memory_scanning"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     async def async_added_to_hass(self) -> None:
@@ -81,10 +81,10 @@ class TracemallocSwitch(SwitchEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_tracemalloc_active"
+        self._attr_name = "memspy_tracemalloc_active"
         self._attr_unique_id = f"{entry.entry_id}_tracemalloc_active"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     async def async_added_to_hass(self) -> None:

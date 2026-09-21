@@ -28,11 +28,11 @@ class TracemallocIncludeText(TextEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_tracemalloc_include"
+        self._attr_name = "memspy_tracemalloc_include"
         self._attr_unique_id = f"{entry.entry_id}_tracemalloc_include"
         self._attr_native_value = manager.snapshot_filter
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     @property
@@ -57,10 +57,10 @@ class TracemallocExcludeText(TextEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "prolog_tracemalloc_exclude"
+        self._attr_name = "memspy_tracemalloc_exclude"
         self._attr_unique_id = f"{entry.entry_id}_tracemalloc_exclude"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name="Prolog"
+            identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     @property
