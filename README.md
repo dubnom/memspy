@@ -1,6 +1,6 @@
 # Memspy
 
-Current version: 1.2.0
+Current version: 1.2.1
 
 A standalone Home Assistant custom integration that reports Python object memory, class-level GC usage, global garbage-collector statistics, and tracemalloc snapshots from the running Home Assistant process.
 
@@ -9,7 +9,7 @@ A standalone Home Assistant custom integration that reports Python object memory
 - `number.memspy_memory_scan_frequency` — sets the automatic object-memory scan interval in seconds. It defaults to `30`.
 - `switch.memspy_memory_scanning` — enables or disables periodic object-memory scanning. It is disabled by default. Object-memory scanning is controlled by this frequency number and switch; there are no refresh or set-frequency services.
 - `number.memspy_top_n` — sets how many of the highest-memory classes receive class sensors and how many tracemalloc rows are returned. Its current default is `10`.
-- `text.memspy_tracemalloc_include` — controls the tracemalloc include path. Set it to `*` to include all files.
+- `select.memspy_tracemalloc_include` — selects the tracemalloc include source: `all`, `custom`, or a configured integration domain. Its attributes list configured entries and code locations.
 - `text.memspy_tracemalloc_exclude` — newline-separated tracemalloc filename patterns to exclude. It defaults to an empty value; Memspy and Spook are always excluded in addition to any patterns entered here. Blank lines and lines beginning with `#` are ignored.
 - `switch.memspy_tracemalloc_active` — starts tracemalloc when enabled and captures a final snapshot, fires the `memspy_tracemalloc_snapshot` event, and stops tracemalloc when turned off.
 - `sensor.memspy_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
@@ -29,7 +29,15 @@ Copy `custom_components/memspy` into your Home Assistant `config/custom_componen
 
 Set `number.memspy_memory_scan_frequency` to the desired interval in seconds, then use `switch.memspy_memory_scanning` to enable or disable object-memory scanning.
 
-Use the tracemalloc entities named `text.memspy_tracemalloc_include` and `text.memspy_tracemalloc_exclude` to configure filtering. Enable `switch.memspy_tracemalloc_active` to start tracing. Turning it off captures the final top-N allocation snapshot and stops tracing.
+Use `select.memspy_tracemalloc_include` and `text.memspy_tracemalloc_exclude` to configure filtering. The include select offers:
+
+- `all` — include allocations from every source.
+- `custom` — include the `/config/custom_components` tree.
+- a configured integration domain — include that integration's source tree.
+
+The select attributes expose `config_entries`, containing each configured entry's domain, title, and `code_location`, and `code_locations`, mapping `all`, `custom`, and each integration domain to its resolved source directory. Enable `switch.memspy_tracemalloc_active` to start tracing. Turning it off captures the final top-N allocation snapshot and stops tracing.
+
+`text.memspy_tracemalloc_exclude` accepts newline-separated filename patterns. Blank lines and lines beginning with `#` are ignored; Memspy and Spook paths are always excluded in addition to the configured patterns.
 
 The summary sensor exposes the overall GC snapshot and total object count. The class sensors expose memory and count for each top-memory Python class. Use `number.memspy_top_n` to adjust the supported classes and returned tracemalloc rows; its default is `10`.
 
@@ -41,7 +49,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 - `number.memspy_memory_scan_frequency` state: scan interval in seconds
 - `switch.memspy_tracemalloc_active` state: `on` when tracemalloc is active
 - `sensor.memspy_tracemalloc_duration` state: elapsed tracemalloc time in seconds
-- `text.memspy_tracemalloc_include` state: current include path
+- `select.memspy_tracemalloc_include` state: `all`, `custom`, or an integration domain
 - `text.memspy_tracemalloc_exclude` state: current exclusion patterns
 - `sensor.class_001` state: estimated memory for the highest-memory class
 

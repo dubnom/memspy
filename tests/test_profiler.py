@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from custom_components.memspy import _cleanup_legacy_entities
 from custom_components.memspy.profiler import ProfilerManager
+from custom_components.memspy.select import TracemallocIncludeSelect
 from custom_components.memspy.sensor import ObjectSensor
 
 
@@ -232,12 +233,6 @@ def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
     class FakeRegistry:
         def __init__(self):
             self.entities = {
-                "text.prolog_snapshot_filter": SimpleNamespace(
-                    entity_id="text.prolog_snapshot_filter",
-                    domain="text",
-                    unique_id="entry_snapshot_filter",
-                    config_entry_id="entry",
-                ),
                 "text.prolog_snapshot_exclusions": SimpleNamespace(
                     entity_id="text.prolog_snapshot_exclusions",
                     domain="text",
@@ -282,15 +277,7 @@ def test_legacy_entity_cleanup_migrates_and_removes_collisions(monkeypatch):
 
     _cleanup_legacy_entities(SimpleNamespace(), SimpleNamespace(entry_id="entry"))
 
-    assert registry.updated == [
-        (
-            "text.prolog_snapshot_filter",
-            {
-                "new_entity_id": "text.memspy_tracemalloc_include",
-                "new_unique_id": "entry_tracemalloc_include",
-            },
-        )
-    ]
+    assert registry.updated == []
     assert registry.removed == [
         "text.prolog_snapshot_exclusions",
         "binary_sensor.prolog_tracemalloc_active",
@@ -306,6 +293,30 @@ def test_class_entity_registry_name_is_class_name():
     sensor = ObjectSensor(manager, SimpleNamespace(entry_id="entry"), 1)
 
     assert sensor.name == "dict"
+
+
+def test_tracemalloc_include_select_has_special_options():
+    manager = ProfilerManager(snapshot_filter="*")
+    selector = TracemallocIncludeSelect(
+        manager,
+        SimpleNamespace(entry_id="entry"),
+        ["all", "custom", "homeassistant"],
+        {
+            "all": "*",
+            "custom": "/config/custom_components",
+            "homeassistant": "/usr/local/lib/homeassistant",
+        },
+        [
+            {
+                "domain": "homeassistant",
+                "title": "Home Assistant",
+                "code_location": "/usr/local/lib/homeassistant",
+            }
+        ],
+    )
+
+    assert selector.current_option == "all"
+    assert selector.extra_state_attributes["config_entries"]
 
 
 def test_top_n_must_be_positive():
