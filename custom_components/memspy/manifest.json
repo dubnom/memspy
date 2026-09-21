@@ -4,8 +4,8 @@
   "version": "1.2.0",
   "codeowners": [],
   "config_flow": true,
-  "documentation": "https://github.com/dubnom/prolog",
+  "documentation": "https://github.com/dubnom/memspy",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/dubnom/prolog/issues",
+  "issue_tracker": "https://github.com/dubnom/memspy/issues",
   "requirements": []
 }
