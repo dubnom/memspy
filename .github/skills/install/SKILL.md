@@ -16,7 +16,7 @@ Prepare and publish the current Memspy integration.
    - `sensor.class_001`, `sensor.class_002`, etc. are zero-padded rank sensors ordered by memory usage; their state is memory usage in bytes.
    - Class sensor friendly names are the current Python class names, while rank IDs remain stable as classes move between ranks.
    - Per-class sensors expose `count` and `memory` as attributes.
-   - `number.memspy_top_n` controls the top-N class filter and defaults to `10`.
+   - `number.memspy_results_limit` controls the top-N class filter and defaults to `10`.
    - Object-memory scanning is controlled by `number.memspy_memory_scan_frequency` and `switch.memspy_memory_scanning`; no refresh services exist.
 3. Bump the integration patch version in `custom_components/memspy/manifest.json` unless the user specifies a different release level. Preserve the config-flow schema version unless the config-entry data schema changes.
 4. Run the project validation available in the repository:

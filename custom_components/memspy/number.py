@@ -9,7 +9,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    ATTR_TOP_N,
+    ATTR_RESULTS_LIMIT,
     DOMAIN,
     SIGNAL_REFRESH_CONFIG,
     SIGNAL_PROFILER_UPDATED,
@@ -25,13 +25,13 @@ async def async_setup_entry(
     manager: ProfilerManager = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            TopNNumber(manager, entry),
+            ResultsLimitNumber(manager, entry),
             RefreshFrequencyNumber(manager, entry),
         ]
     )
 
 
-class TopNNumber(NumberEntity):
+class ResultsLimitNumber(NumberEntity):
     """A number entity controlling how many memory users are supported."""
 
     _attr_native_min_value = 1
@@ -41,20 +41,20 @@ class TopNNumber(NumberEntity):
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
-        self._attr_name = "memspy_top_n"
-        self._attr_unique_id = f"{entry.entry_id}_top_n"
+        self._attr_name = "memspy_results_limit"
+        self._attr_unique_id = f"{entry.entry_id}_results_limit"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)}, name="Memspy"
         )
 
     @property
     def native_value(self) -> int:
-        return self._manager.top_n
+        return self._manager.results_limit
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the bound and refresh object sensors."""
         value = int(value)
-        self._manager.set_top_n(value)
+        self._manager.set_results_limit(value)
         await async_refresh_manager(self.hass, self._manager)
 
 

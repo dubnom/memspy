@@ -53,7 +53,7 @@ def test_refresh_updates_last_report():
 
 
 def test_class_names_and_memory_are_available_per_object_type():
-    manager = ProfilerManager(top_n=2)
+    manager = ProfilerManager(results_limit=2)
     manager.last_report = {
         "object_counts": {"dict": 7, "list": 10},
         "memory_counts": {"dict": 128, "list": 256},
@@ -64,8 +64,8 @@ def test_class_names_and_memory_are_available_per_object_type():
     assert manager.last_report["memory_counts"]["dict"] == 128
 
 
-def test_top_n_filters_supported_classes_and_notifies_listeners():
-    manager = ProfilerManager(top_n=1)
+def test_results_limit_filters_supported_classes_and_notifies_listeners():
+    manager = ProfilerManager(results_limit=1)
     notifications = []
     manager.add_refresh_listener(lambda: notifications.append(manager.class_names))
     manager.last_report = {
@@ -74,7 +74,7 @@ def test_top_n_filters_supported_classes_and_notifies_listeners():
     }
 
     assert manager.class_names == ["set"]
-    manager.set_top_n(3)
+    manager.set_results_limit(3)
 
     assert manager.class_names == ["set", "dict", "list"]
     manager.refresh()
@@ -82,8 +82,8 @@ def test_top_n_filters_supported_classes_and_notifies_listeners():
     assert notifications
 
 
-def test_tracemalloc_snapshot_uses_top_n_limit():
-    manager = ProfilerManager(top_n=2)
+def test_tracemalloc_snapshot_uses_results_limit():
+    manager = ProfilerManager(results_limit=2)
     manager.start_tracemalloc()
     try:
         snapshot = manager.snapshot_tracemalloc()
@@ -96,7 +96,7 @@ def test_tracemalloc_snapshot_uses_top_n_limit():
 
 
 def test_tracemalloc_snapshot_is_stored_on_manager():
-    manager = ProfilerManager(top_n=2)
+    manager = ProfilerManager(results_limit=2)
     manager.start_tracemalloc()
     try:
         snapshot = manager.snapshot_tracemalloc()
@@ -128,7 +128,7 @@ def test_tracemalloc_elapsed_time_is_frozen_after_stop(monkeypatch):
 
 
 def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
-    manager = ProfilerManager(top_n=10)
+    manager = ProfilerManager(results_limit=10)
     manager.set_snapshot_filter("/tmp/prolog")
     manager.set_snapshot_exclusions("/tmp/prolog/pkg/c.py")
 
@@ -185,8 +185,8 @@ def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
     ]
 
 
-def test_snapshot_exclusions_are_applied_before_top_n():
-    manager = ProfilerManager(top_n=2)
+def test_snapshot_exclusions_are_applied_before_results_limit():
+    manager = ProfilerManager(results_limit=2)
     manager.set_snapshot_exclusions("/tmp/noisy/*\n# ignored\n")
     assert manager.snapshot_exclusions == ["/tmp/noisy/*"]
 
@@ -263,12 +263,12 @@ def test_tracemalloc_include_select_has_special_options():
     assert selector.extra_state_attributes["config_entries"]
 
 
-def test_top_n_must_be_positive():
+def test_results_limit_must_be_positive():
     manager = ProfilerManager()
 
     try:
-        manager.set_top_n(0)
+        manager.set_results_limit(0)
     except ValueError:
         pass
     else:
-        raise AssertionError("top_n=0 should raise ValueError")
+        raise AssertionError("results_limit=0 should raise ValueError")

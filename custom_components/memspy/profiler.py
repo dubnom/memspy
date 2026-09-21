@@ -8,7 +8,7 @@ import tracemalloc
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from .const import DEFAULT_REFRESH_FREQUENCY, DEFAULT_TOP_N
+from .const import DEFAULT_REFRESH_FREQUENCY, DEFAULT_RESULTS_LIMIT
 
 DEFAULT_SNAPSHOT_EXCLUSIONS = (
     "/config/custom_components/memspy/*",
@@ -21,11 +21,11 @@ class ProfilerManager:
 
     def __init__(
         self,
-        top_n: int = DEFAULT_TOP_N,
+        results_limit: int = DEFAULT_RESULTS_LIMIT,
         snapshot_filter: str = "/config/custom_components",
         snapshot_exclusions: str = "",
     ) -> None:
-        self.top_n = top_n
+        self.results_limit = results_limit
         self.snapshot_filter = snapshot_filter
         self.snapshot_exclusions = self._parse_snapshot_exclusions(snapshot_exclusions)
         self.refresh_frequency = DEFAULT_REFRESH_FREQUENCY
@@ -48,11 +48,11 @@ class ProfilerManager:
         for listener in self._refresh_listeners:
             listener()
 
-    def set_top_n(self, top_n: int) -> None:
+    def set_results_limit(self, results_limit: int) -> None:
         """Set the number of highest-memory classes that support sensors."""
-        if top_n < 1:
-            raise ValueError("top_n must be at least 1")
-        self.top_n = top_n
+        if results_limit < 1:
+            raise ValueError("results_limit must be at least 1")
+        self.results_limit = results_limit
 
     def set_snapshot_filter(self, snapshot_filter: str | None) -> None:
         """Set the directory prefix used to include tracemalloc entries."""
@@ -106,7 +106,7 @@ class ProfilerManager:
             for name, _memory in sorted(
                 self.last_report["memory_counts"].items(),
                 key=lambda item: (-item[1], item[0]),
-            )[: self.top_n]
+            )[: self.results_limit]
         ]
 
     def refresh(self) -> dict:
@@ -193,7 +193,7 @@ class ProfilerManager:
                     "count": stat.count,
                 }
             )
-            if len(rows) >= max(1, self.top_n):
+            if len(rows) >= max(1, self.results_limit):
                 break
 
         self.last_tracemalloc_snapshot = rows
