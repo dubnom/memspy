@@ -1,6 +1,6 @@
 # MemSpy
 
-Current version: 1.2.3
+Current version: 1.2.4
 
 A standalone Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
