@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.6
+Version: 1.2.7
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -132,6 +132,8 @@ A view is auto installed by the integration which should help get you started. U
 - [custom:apex_charts](https://github.com/romrider/apexcharts-card)
 - [custom:mushroom-select-card](https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/select.md)
 - [custom:auto-entities](https://github.com/thomasloven/lovelace-auto-entities)
+
+![Dashboard](screenshot.png)
 
 ## Development
 
