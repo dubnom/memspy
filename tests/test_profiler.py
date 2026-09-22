@@ -9,6 +9,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from custom_components.memspy import dashboard
+from custom_components.memspy.button import InstallDashboardButton
 from custom_components.memspy.profiler import ProfilerManager
 from custom_components.memspy.select import TracemallocIncludeSelect
 from custom_components.memspy.sensor import ObjectSensor
@@ -261,6 +262,12 @@ def test_dashboard_view_includes_version_marker():
     view = dashboard._load_view_sync()
 
     assert view.get("memspy_view_version") == dashboard.VIEW_VERSION
+
+
+def test_install_dashboard_button_has_expected_entity_name():
+    button = InstallDashboardButton(SimpleNamespace(entry_id="entry"), "test")
+
+    assert button.name == "Install dashboard"
 
 
 def test_results_limit_must_be_positive():

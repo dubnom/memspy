@@ -18,7 +18,7 @@ from .dashboard import async_register_dashboard_view
 from .helpers import async_refresh_manager
 from .profiler import ProfilerManager
 
-PLATFORMS = ["sensor", "number", "text", "select", "switch"]
+PLATFORMS = ["sensor", "number", "text", "select", "switch", "button"]
 _LOGGER = logging.getLogger(__name__)
 
 
