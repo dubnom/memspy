@@ -191,6 +191,6 @@ header:
   card:
     type: markdown
     text_only: true
-    content: '# MemSpy - Memory Diagnostics'
+    content: '# MemSpy - Memory Diagnostics!'
 icon: mdi:incognito
 cards: []
