@@ -2,6 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
+memspy_view_version: 1
 sections:
   - type: grid
     cards:
