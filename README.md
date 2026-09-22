@@ -1,24 +1,54 @@
 # MemSpy
 
-Current version: 1.2.5
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/v/release/dubnom/memspy)](https://github.com/dubnom/memspy/releases)
+[![GitHub Activity](https://img.shields.io/github/commit-activity/y/dubnom/memspy)](https://github.com/dubnom/memspy/commits/main)
+[![License](https://img.shields.io/github/license/dubnom/memspy)](LICENSE)
 
-A standalone Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dubnom&repository=memspy&category=integration)
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
+
+*Written by Michael Dubno* -
+Version: 1.2.6
+
+A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
 ## Purpose and Concepts
 
-Some integrations leak memory and cause Home Assistant to eventually crash. This is primarily an issue with custom integrations. It has been a difficult and involved process to determine which integrations are leaking and even harder to find the suspicious code.  This is true for developers and users of custom integrations.  MemSpy is designed to make this process easier. It is implemented as a standard integration that allows full Home Assistant use - Lovelace panels, automations, etc.
+Some integrations leak memory and cause Home Assistant to eventually crash - an issue primarily with custom integrations. It has been difficult and requires some skill to determine which integrations are leaking, and even harder to find the suspicious code.  This affects all developers and users of custom integrations.  MemSpy is designed to make finding leaks easier. It is implemented as a standard integration that allows full Home Assistant use - Lovelace panels, automations, etc.
 
 MemSpy tools run only on demand to conserve memory and CPU.
 
-To find the integration that is allocating memory, use the `tracemalloc` entities. The `select.memspy_tracemalloc_include` chooses which integrations should be examined. It has special options for `all` and `custom`. Switching `switch.memspy_tracemalloc_active` on starts the trace. When turned off, it populates the `snapshot` attribute of `sensor.memspy_tracemalloc` with a list of `{filename, line number, memory, and count}` entries. The list is filtered to only include files that match `select.memspy_tracemalloc_include`. It is also sorted by memory, high to low. The results are limited to `number.memspy_results_limit`. Tracemalloc is the most useful for pinpointing memory issues.
+Three ways of looking at memory:
+- Tracing the allocation of memory in the code - [tracemalloc](https://docs.python.org/3/library/tracemalloc.html)
+- Watching object memory use - [gc](https://docs.python.org/3/library/gc.html)
+- Examining the garbage collector - [gc](https://docs.python.org/3/library/gc.html)
 
-Sometimes it is more useful to approach memory issues by looking at how Python objects use memory. These entities use the `gc` library to track a list of `{class, memory, objects}` on a recurring basis. They are the `sensor.memspy` summary sensor and the `sensor.memspy_class_###` entities. The period between updates is controlled by `number.memspy_memory_scan_frequency`, which defaults to 30 seconds. Switching `switch.memspy_memory_scanning` on starts the scanning. `sensor.class_###` entities are updated periodically with the results. Turning off `switch.memspy_memory_scanning` stops the scanning.
+### Using `tracemalloc` entities:
+The `select.memspy_tracemalloc_include` controls the integrations that will be examined. There are special options for `all` and `custom`.
+Switching on `switch.memspy_tracemalloc_active` starts the trace. Turning it off populates the `snapshot` attribute of `sensor.memspy_tracemalloc` with a list of `{filename, line number, memory, and count}`. The list is only includes integrations that match `select.memspy_tracemalloc_include`. The list is limited to `number.mempy_results_limit` and is sort from high to low based on memory usage.
 
-While scanning, the Python garbage collector has some useful information. The `gc_stats`, `garbage`, `collections`, `collected`, and `uncollectable` attributes of `sensor.memspy` are updated along with the class entities.
+### Using `memory` entities:
+Approaching memory issues by seeing how Python objects use memory is another path for finding leaks. The  `gc` library is used to expose the Python classes, the object count, and the total amount of memory consumed. A `sensor.memspy_class_###` is create from 1 to `sensor.memspy_results_limit`.  The class sensors have - the Python class name, the state is the memory used, and a `count` attribute for number of instances. `number.memspy_memory_scan_frequency` controls how often these class entities update. `switch.memspy_memory_scanning` starts and stops the scanning.
+
+`sensor.memspy` tracks Python garbage collector data. The state is the `object count` and the attributes are:
+- Attribute
+- Collected
+- Collections
+- Uncollectable
+- Garbage
+- Gc stats (list)
+  - collections
+  - collected
+  - uncollectable
+- Memory
+- Object count
+
+The [gc](https://docs.python.org/3/library/gc.html) documentation provides an explanation for what the garbage collector does, and what these values mean.
 
 ## Finding Leaks
 
-We're looking for memory leaks - any memory number that continuously grows. The workflow that works best (for me) is -
+When looking for memory leaks, we're looking for any memory number that continuously grows. The workflow that works best (for me) is -
 - Use `sensor.memory_use_percent` from Home Assistant's System Monitor integration and chart it over time.
 - Check third-party app memory usage with the System Monitor integration. Rule this out before diving into individual integrations.
 - Set `tracemalloc` entities to `custom` and start `tracemalloc`. Let it run for a few minutes and then turn it off and check the results. The list is sorted from largest memory use to smallest. Integrations may show up multiple times with different seqments of suspect code. Performing the step a number of times, or over long time spans, usually finds the leading culprits.  Examine the code in the [File Editor](https://github.com/home-assistant/addons/blob/master/configurator/DOCS.md) addon.
@@ -28,7 +58,7 @@ We're looking for memory leaks - any memory number that continuously grows. The 
 - If you are still searching, use the `memory` sensors to examine the classes using the most memory, and look at charts of their memory and instance growth.
 - Finally, check `sensor.memspy` to make sure the garbage collector is working.
 
-Using the profiler and turning on debugging for specific integrations is also helpful. However, the profiler puts an enormous load on the system making it difficult to use while dealing with memory exhaustion. The debug logging also has its limits - it relies on the developer to embed logging statemments, and for these log entries to be something you care about. Debug logging also requires you to read through logs. It is extremely useful for integrations that are generating errors.
+Using the profiler and turning on debugging for specific integrations is also helpful. However, the profiler puts an enormous load on the system making it difficult to use while dealing with memory exhaustion. The debug logging also has its limits - it relies on the developer to embed logging statemments, and for these log entries to be something you care about. Debug writes to logs, and requires you to read through them. Debug and Logs are extremely useful to fix integrations generating errors.
 
 A good description of how memory works and how to find leaks read - [How to Debug Memory Leaks in Python](https://oneuptime.com/blog/post/2026-01-24-debug-memory-leaks-python/view)
 
@@ -51,7 +81,21 @@ Class sensor friendly names are the raw Python class names, without the `Memspy`
 
 ## Installation
 
-Copy `custom_components/memspy` into your Home Assistant `config/custom_components/` directory (or install via HACS as a custom repository), restart Home Assistant, then add the integration from **Settings → Devices & Services → Add Integration → Memspy**.
+### HACS (recommended)
+
+1. Ensure [HACS](https://hacs.xyz) is installed.
+2. Add this repository as a custom repository in HACS: **HACS → Integrations → ⋮ → Custom repositories**, enter `https://github.com/dubnom/memspy`, category **Integration** — or use the button below.
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dubnom&repository=memspy&category=integration)
+3. Search for **MemSpy** in HACS and install it.
+4. Restart Home Assistant.
+5. Go to **Settings → Devices & Services → Add Integration**, search for **MemSpy**, and add it — or use the button below.
+   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
+
+### Manual
+
+1. Copy `custom_components/memspy` into your Home Assistant `config/custom_components/` directory.
+2. Restart Home Assistant.
+3. Add the integration from **Settings → Devices & Services → Add Integration → MemSpy**.
 
 ## Usage
 
@@ -83,7 +127,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 
 ## User Interface (Lovelace)
 
-A view is auto installed by the integration which should help get you started. It needs the following custom cards (from HACS) to work correctly:
+A view is auto installed by the integration which should help get you started. Upgrading MemSpy may overwrite this view, so name it something other than `memspy` if you customize it. The following custom cards (from HACS) are used:
 - [custom:custom-icons](https://github.com/thomasloven/hass-custom_icons)
 - [custom:apex_charts](https://github.com/romrider/apexcharts-card)
 - [custom:mushroom-select-card](https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/select.md)
@@ -95,3 +139,7 @@ A view is auto installed by the integration which should help get you started. I
 pip install -r requirements_test.txt
 pytest
 ```
+
+## License
+
+[MIT](LICENSE)

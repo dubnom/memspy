@@ -10,7 +10,7 @@ Prepare and publish the current Memspy integration.
 ## Workflow
 
 1. Inspect the repository status, current branch, configured remote, recent commits, and the integration version in `custom_components/memspy/manifest.json`.
-2. Read the current `README.md`, integration metadata, action descriptions, and changed implementation files. Update documentation so it describes the actual sensors, controls, refresh behavior, installation steps, and versioned feature set. Keep the documentation version number synchronized with the version in `custom_components/memspy/manifest.json`, updating both when the release version changes. In particular, confirm that the docs match the current entity layout:
+2. Read the current `README.md`, integration metadata, action descriptions, and changed implementation files. Update documentation so it describes the actual sensors, controls, refresh behavior, installation steps, and versioned feature set. Keep the documentation `Version:` line (no "Current") synchronized with the version in `custom_components/memspy/manifest.json`, updating both when the release version changes. In particular, confirm that the docs match the current entity layout:
    - `sensor.memspy` is the global summary sensor with total object count as its state.
    - The summary sensor exposes `memory`, `garbage`, `collections`, `collected`, `uncollectable`, and `gc_stats` as attributes.
    - `sensor.class_001`, `sensor.class_002`, etc. are zero-padded rank sensors ordered by memory usage; their state is memory usage in bytes.
