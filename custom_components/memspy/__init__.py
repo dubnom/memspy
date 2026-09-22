@@ -6,6 +6,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -57,7 +58,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     configure_refresh()
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    await async_register_dashboard_view(hass)
+
+    async def retry_dashboard_install(_now) -> None:
+        """Retry the dashboard install once Lovelace is ready to accept it."""
+        await async_register_dashboard_view(hass, force=True)
+
+    result = await async_register_dashboard_view(hass)
+    if result in {"lovelace_not_ready", "dashboard_not_storage_mode"}:
+        async_call_later(hass, 10, lambda _now: hass.async_create_task(retry_dashboard_install(_now)))
 
     async def handle_install_dashboard(_call: ServiceCall) -> dict[str, str]:
         """Force-(re)install the MemSpy Lovelace view, bypassing the version check."""

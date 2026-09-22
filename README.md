@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.11
+Version: 1.2.12
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -127,7 +127,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 
 ## User Interface (Lovelace)
 
-A view is auto installed by the integration which should help get you started. Upgrading MemSpy may overwrite this view, so name it something other than `memspy` if you customize it. If the view doesn't appear automatically, call the `memspy.install_dashboard` action to force it to (re)install regardless of whether it's already up to date. The following custom cards (from HACS) are used:
+A dedicated **MemSpy** dashboard is auto installed by the integration and appears in the Home Assistant sidebar at `/lovelace/memspy-dashboard`. Upgrading MemSpy may overwrite its `memspy` view, so copy or rename the view if you customize it. If the dashboard does not appear automatically, press the MemSpy device's **Install dashboard** button or call the `memspy.install_dashboard` action. The following custom cards (from HACS) are used:
 - [custom:custom-icons](https://github.com/thomasloven/hass-custom_icons)
 - [custom:apex_charts](https://github.com/romrider/apexcharts-card)
 - [custom:mushroom-select-card](https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/select.md)
