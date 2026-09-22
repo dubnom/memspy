@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.8
+Version: 1.2.9
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -67,7 +67,7 @@ A good description of how memory works and how to find leaks read - [How to Debu
 - `number.memspy_memory_scan_frequency` — sets the automatic object-memory scan interval in seconds. It defaults to `30`.
 - `switch.memspy_memory_scanning` — enables or disables periodic object-memory scanning. It is disabled by default. Object-memory scanning is controlled by this frequency number and switch; there are no refresh or set-frequency services.
 - `number.memspy_results_limit` — sets how many of the highest-memory classes receive class sensors and how many tracemalloc rows are returned. Its current default is `10`.
-- `select.memspy_tracemalloc_include` — selects the tracemalloc include source: `all`, `custom`, or a configured integration domain. Its attributes list configured entries and code locations.
+- `select.memspy_tracemalloc_include` — selects the tracemalloc include source: `all`, `custom`, or a configured integration domain. Its `code_location` attribute exposes the resolved source directory for the current selection.
 - `text.memspy_tracemalloc_exclude` — newline-separated tracemalloc filename patterns to exclude. It defaults to an empty value; Memspy and Spook are always excluded in addition to any patterns entered here. Blank lines and lines beginning with `#` are ignored.
 - `switch.memspy_tracemalloc_active` — starts tracemalloc when enabled and captures a final snapshot, fires the `memspy_tracemalloc_snapshot` event, and stops tracemalloc when turned off.
 - `sensor.memspy_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
@@ -107,7 +107,7 @@ Use `select.memspy_tracemalloc_include` and `text.memspy_tracemalloc_exclude` to
 - `custom` — include the `/config/custom_components` tree.
 - a configured integration domain — include that integration's source tree.
 
-The select attributes expose `config_entries`, containing each configured entry's domain, title, and `code_location`, and `code_locations`, mapping `all`, `custom`, and each integration domain to its resolved source directory. Enable `switch.memspy_tracemalloc_active` to start tracing. Turning it off captures the final top-N allocation snapshot and stops tracing.
+The select exposes a `code_location` attribute with the resolved source directory for the current selection. Enable `switch.memspy_tracemalloc_active` to start tracing. Turning it off captures the final top-N allocation snapshot and stops tracing.
 
 `text.memspy_tracemalloc_exclude` accepts newline-separated filename patterns. Blank lines and lines beginning with `#` are ignored; Memspy and Spook paths are always excluded in addition to the configured patterns.
 
@@ -127,7 +127,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 
 ## User Interface (Lovelace)
 
-A view is auto installed by the integration which should help get you started. Upgrading MemSpy may overwrite this view, so name it something other than `memspy` if you customize it. The following custom cards (from HACS) are used:
+A view is auto installed by the integration which should help get you started. Upgrading MemSpy may overwrite this view, so name it something other than `memspy` if you customize it. If the view doesn't appear automatically, call the `memspy.install_dashboard` action to force it to (re)install regardless of whether it's already up to date. The following custom cards (from HACS) are used:
 - [custom:custom-icons](https://github.com/thomasloven/hass-custom_icons)
 - [custom:apex_charts](https://github.com/romrider/apexcharts-card)
 - [custom:mushroom-select-card](https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/select.md)

@@ -250,17 +250,10 @@ def test_tracemalloc_include_select_has_special_options():
             "custom": "/config/custom_components",
             "homeassistant": "/usr/local/lib/homeassistant",
         },
-        [
-            {
-                "domain": "homeassistant",
-                "title": "Home Assistant",
-                "code_location": "/usr/local/lib/homeassistant",
-            }
-        ],
     )
 
     assert selector.current_option == "all"
-    assert selector.extra_state_attributes["config_entries"]
+    assert selector.extra_state_attributes["code_location"] == "*"
 
 
 def test_results_limit_must_be_positive():

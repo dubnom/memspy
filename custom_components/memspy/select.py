@@ -30,7 +30,6 @@ async def async_setup_entry(
         OPTION_ALL: "*",
         OPTION_CUSTOM: CUSTOM_COMPONENTS_PATH,
     }
-    config_entries: list[dict[str, object]] = []
 
     domains = sorted(
         {config_entry.domain for config_entry in hass.config_entries.async_entries()}
@@ -42,18 +41,8 @@ async def async_setup_entry(
             continue
         options.append(domain)
         locations[domain] = str(Path(integration.file_path))
-        config_entries.extend(
-            {
-                "domain": domain,
-                "title": config_entry.title,
-                "code_location": locations[domain],
-            }
-            for config_entry in hass.config_entries.async_entries(domain)
-        )
 
-    async_add_entities(
-        [TracemallocIncludeSelect(manager, entry, options, locations, config_entries)]
-    )
+    async_add_entities([TracemallocIncludeSelect(manager, entry, options, locations)])
 
 
 class TracemallocIncludeSelect(SelectEntity):
@@ -67,13 +56,11 @@ class TracemallocIncludeSelect(SelectEntity):
         entry: ConfigEntry,
         options: list[str],
         locations: dict[str, str],
-        config_entries: list[dict[str, object]],
     ) -> None:
         self._manager = manager
         self._locations = locations
         self._attr_options = options
         self._attr_current_option = self._option_for_filter(manager.snapshot_filter)
-        self._config_entries = config_entries
         self._attr_name = "memspy_tracemalloc_include"
         self._attr_unique_id = f"{entry.entry_id}_tracemalloc_include_select"
         self._attr_device_info = DeviceInfo(
@@ -92,11 +79,13 @@ class TracemallocIncludeSelect(SelectEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
-        """Expose configured entries and their resolved source directories."""
-        return {
-            "config_entries": self._config_entries,
-            "code_locations": self._locations,
-        }
+        """Expose the resolved source directory for the current selection.
+
+        Only the current selection is exposed (not every configured entry or
+        installed integration) to stay well under Home Assistant recorder's
+        16 KiB state-attribute size limit on systems with many integrations.
+        """
+        return {"code_location": self._locations.get(self._attr_current_option, "*")}
 
     async def async_select_option(self, option: str) -> None:
         """Apply the selected include location."""

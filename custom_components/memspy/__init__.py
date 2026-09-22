@@ -5,12 +5,13 @@ from datetime import timedelta
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     DOMAIN,
+    SERVICE_INSTALL_DASHBOARD,
     SIGNAL_REFRESH_CONFIG,
 )
 from .dashboard import async_register_dashboard_view
@@ -57,6 +58,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_register_dashboard_view(hass)
+
+    async def handle_install_dashboard(_call: ServiceCall) -> dict[str, str]:
+        """Force-(re)install the MemSpy Lovelace view, bypassing the version check."""
+        result = await async_register_dashboard_view(hass, force=True)
+        return {"result": result}
+
+    if not hass.services.has_service(DOMAIN, SERVICE_INSTALL_DASHBOARD):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_INSTALL_DASHBOARD,
+            handle_install_dashboard,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
     return True
 
 
@@ -71,4 +85,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         refresh_unsub = getattr(manager, "_refresh_unsub", None)
         if refresh_unsub:
             refresh_unsub()
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, SERVICE_INSTALL_DASHBOARD)
     return unload_ok

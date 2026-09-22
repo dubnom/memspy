@@ -26,31 +26,32 @@ def _load_view() -> dict[str, Any]:
     return view
 
 
-async def async_register_dashboard_view(hass: HomeAssistant) -> None:
-    """Add the MemSpy view to the default storage-mode Lovelace dashboard.
+async def async_register_dashboard_view(hass: HomeAssistant, *, force: bool = False) -> str:
+    """Add or refresh the MemSpy view on the default storage-mode Lovelace dashboard.
 
     This is best-effort: any failure (unsupported Lovelace version, YAML-mode
     dashboard, missing lovelace integration, etc.) is logged and ignored so it
-    never prevents the config entry from loading.
+    never prevents the config entry from loading. Returns a short machine-readable
+    reason string describing what happened, which is also logged.
     """
     try:
         from homeassistant.components.lovelace.const import LOVELACE_DATA
         from homeassistant.components.lovelace.dashboard import ConfigNotFound
     except ImportError:
         _LOGGER.debug("Lovelace integration not available; skipping view registration")
-        return
+        return "lovelace_unavailable"
 
     lovelace_data = hass.data.get(LOVELACE_DATA)
     if lovelace_data is None:
         _LOGGER.debug("Lovelace has not been set up yet; skipping view registration")
-        return
+        return "lovelace_not_ready"
 
     dashboard_config = lovelace_data.dashboards.get(None)
     if dashboard_config is None or dashboard_config.mode != "storage":
         _LOGGER.debug(
             "Default dashboard is not storage-managed; skipping view registration"
         )
-        return
+        return "dashboard_not_storage_mode"
 
     try:
         config = await dashboard_config.async_load(False)
@@ -62,26 +63,33 @@ async def async_register_dashboard_view(hass: HomeAssistant) -> None:
         (index for index, view in enumerate(views) if view.get("path") == VIEW_PATH),
         None,
     )
-    if existing_index is not None and views[existing_index].get(VIEW_VERSION_KEY) == VIEW_VERSION:
-        return
+    if (
+        not force
+        and existing_index is not None
+        and views[existing_index].get(VIEW_VERSION_KEY) == VIEW_VERSION
+    ):
+        _LOGGER.debug(
+            "MemSpy view already present at version %s; skipping", VIEW_VERSION
+        )
+        return "already_up_to_date"
 
     try:
         view = _load_view()
     except OSError:
         _LOGGER.warning("Unable to load bundled MemSpy dashboard view")
-        return
+        return "view_file_missing"
 
     if existing_index is None:
         views.append(view)
+        reason = "added"
     else:
         views[existing_index] = view
+        reason = "updated"
     try:
         await dashboard_config.async_save(config)
     except Exception:  # noqa: BLE001 - never break setup over a dashboard tweak
         _LOGGER.exception("Failed to add MemSpy view to the default dashboard")
-        return
+        return "save_failed"
 
-    if existing_index is None:
-        _LOGGER.info("Added MemSpy view to the default Lovelace dashboard")
-    else:
-        _LOGGER.info("Updated MemSpy view on the default Lovelace dashboard")
+    _LOGGER.info("MemSpy dashboard view %s on the default Lovelace dashboard", reason)
+    return reason
