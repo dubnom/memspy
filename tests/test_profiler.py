@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from custom_components.memspy import dashboard
 from custom_components.memspy.profiler import ProfilerManager
 from custom_components.memspy.select import TracemallocIncludeSelect
 from custom_components.memspy.sensor import ObjectSensor
@@ -254,6 +255,12 @@ def test_tracemalloc_include_select_has_special_options():
 
     assert selector.current_option == "all"
     assert selector.extra_state_attributes["code_location"] == "*"
+
+
+def test_dashboard_view_includes_version_marker():
+    view = dashboard._load_view_sync()
+
+    assert view.get("memspy_view_version") == dashboard.VIEW_VERSION
 
 
 def test_results_limit_must_be_positive():

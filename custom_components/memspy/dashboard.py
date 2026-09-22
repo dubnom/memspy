@@ -18,12 +18,17 @@ VIEW_VERSION_KEY = "memspy_view_version"
 VIEW_VERSION = 1
 
 
-def _load_view() -> dict[str, Any]:
-    """Load the bundled MemSpy Lovelace view definition."""
+def _load_view_sync() -> dict[str, Any]:
+    """Read the bundled MemSpy Lovelace view definition without blocking the event loop."""
     with _VIEW_FILE.open("r", encoding="utf-8") as handle:
         view = yaml.safe_load(handle)
     view[VIEW_VERSION_KEY] = VIEW_VERSION
     return view
+
+
+async def _load_view(hass: HomeAssistant) -> dict[str, Any]:
+    """Load the dashboard YAML via the executor so the event loop stays responsive."""
+    return await hass.async_add_executor_job(_load_view_sync)
 
 
 async def async_register_dashboard_view(hass: HomeAssistant, *, force: bool = False) -> str:
@@ -74,7 +79,7 @@ async def async_register_dashboard_view(hass: HomeAssistant, *, force: bool = Fa
         return "already_up_to_date"
 
     try:
-        view = _load_view()
+        view = await _load_view(hass)
     except OSError:
         _LOGGER.warning("Unable to load bundled MemSpy dashboard view")
         return "view_file_missing"
