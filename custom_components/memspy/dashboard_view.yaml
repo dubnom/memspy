@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 5
+memspy_view_version: 6
 sections:
   - type: grid
     cards:
@@ -136,23 +136,6 @@ sections:
         grid_options:
           columns: 12
           rows: auto
-      - type: markdown
-        content: >-
-          {% set duration =
-          states('sensor.memspy_tracemalloc_duration') %}
-
-          {% if duration != 'unknown' -%}
-          {% set snapshot = state_attr( 'sensor.memspy_tracemalloc',
-          'snapshot' ) | from_json %}
-
-          | Module | Line | Memory | MPH | Count |
-
-          | :---- | ----: | ----: | ---: | ----: |
-
-          {% for snap in snapshot or [] -%}
-            {%set abbr = snap.filename.split('/') %}   | {{ abbr[-2::] | join('/') }} | {{ snap.lineno }} | {{snap.size | int}} | {{snap.mph | int}} | {{ snap.count }} | {{ '\n' }}
-            {%- endfor %}
-          {%- endif %}
   - type: grid
     cards:
       - type: heading
@@ -226,6 +209,18 @@ header:
     content: |-
       # MemSpy - Memory Diagnostics
 
-      Dashboard version: **5**
+      Dashboard version: **6**
 icon: mdi:incognito
+# Archived raw snapshot card. The active dashboard uses Memory by Integration.
+# - type: markdown
+#   content: >-
+#     {% set duration = states('sensor.memspy_tracemalloc_duration') %}
+#     {% if duration != 'unknown' -%}
+#     {% set snapshot = state_attr('sensor.memspy_tracemalloc', 'snapshot') | from_json %}
+#     | Module | Line | Memory | MPH | Count |
+#     | :---- | ----: | ----: | ---: | ----: |
+#     {% for snap in snapshot or [] -%}
+#       {% set abbr = snap.filename.split('/') %} | {{ abbr[-2::] | join('/') }} | {{ snap.lineno }} | {{ snap.size | int }} | {{ snap.mph | int }} | {{ snap.count }} |
+#     {% endfor %}
+#     {%- endif %}
 cards: []

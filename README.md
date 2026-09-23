@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.23
+Version: 1.2.24
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -69,7 +69,7 @@ The [gc](https://docs.python.org/3/library/gc.html) documentation provides an ex
 When looking for memory leaks, we're looking for any memory number that continuously grows. The workflow that works best (for me) is -
 - Use `sensor.memory_use_percent` from Home Assistant's System Monitor integration and chart it over time.
 - Check third-party app memory usage with the System Monitor integration. Rule this out before diving into individual integrations.
-- Set `tracemalloc` entities to `custom` and start `tracemalloc`. Let it run for a few minutes and then turn it off and check the results. The list is sorted from largest memory use to smallest. Integrations may show up multiple times with different seqments of suspect code. Performing the step a number of times, or over long time spans, usually finds the leading culprits.  Examine the code in the [File Editor](https://github.com/home-assistant/addons/blob/master/configurator/DOCS.md) addon.
+- Set the tracemalloc include selector to `custom` and enable `switch.memspy_tracemalloc_active`. Let it run for a few minutes, then turn it off and review the **Memory by Integration** panel in the MemSpy dashboard. It groups the largest allocations by integration and shows total memory, `mph`, source file, line, and allocation count. Repeating the capture over time helps identify integrations whose memory usage continues to grow. Examine the source in the [File Editor](https://github.com/home-assistant/addons/blob/master/configurator/DOCS.md) addon.
 - If you suspect a specific integration, change the include filter to the name of your integration.
 - Disable the integration for a long enough period of time to see if it really was the offender.
 - If a leaky integration wasn't found, try the same process using `all` for the include.
