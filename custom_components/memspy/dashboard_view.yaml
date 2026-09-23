@@ -120,22 +120,6 @@ sections:
             {%set abbr = snap.filename.split('/') %}   | {{ abbr[-2::] | join('/') }} | {{ snap.lineno }} | {{snap.size | int}} | {{snap.mph | int}} | {{ snap.count }} | {{ '\n' }}
             {%- endfor %}
           {%- endif %}
-      - type: markdown
-        content: |-
-          ## Memory by Integration
-          {% set integrations = state_attr( 'sensor.memspy_memspy_memspy_tracemalloc_by_integration', 'results') %}
-          {% if integrations -%}
-          | Integration | Memory | MPH | File | Line | Count |
-          | :--- | ---: | ---: | :--- | ---: | ---: |
-          {% for item in integrations -%}
-          | {{ item.integration }} | {{ '{:,.0f}'.format(item.memory | int) }} bytes | {{ '{:,.0f}'.format(item.mph | int) }} | | | |
-          {% for allocation in item.allocations -%}
-          | | | | {{ allocation.filename }} | {{ allocation.line }} | {{ allocation.count }} |
-          {% endfor -%}
-          {% endfor -%}
-          {%- else -%}
-            No aggregated tracemalloc results yet.
-          {%- endif %}
   - type: grid
     cards:
       - type: heading
@@ -203,10 +187,51 @@ sections:
         options:
           tap_action:
             action: more-info
+  - type: grid
+    cards:
+      - type: markdown
+        content: >-
+          ## Memory by Integration
+
+          {% set integrations = state_attr(
+          'sensor.memspy_memspy_memspy_tracemalloc_by_integration',
+          'results') %}
+
+          {% if integrations -%}
+
+          | Integration | Memory | MPH | File | Line | Count |
+
+          | :--- | ---: | ---: | :--- | ---: | ---: |
+
+          {% for item in integrations -%}
+
+          | <b>{{ item.integration }}</b> | {{ '{:,.0f}'.format(item.memory
+          | int) }}b | {{ '{:,.0f}'.format(item.mph | int) }}b | | | |
+
+          {% for allocation in item.allocations -%}{% set
+          abbr=allocation.filename.split('/') %}   | | {{ allocation.memory
+          }} | {{ allocation.mph }} | {{ abbr[-1::]|join('/') }} | {{
+          allocation.line }} | {{ allocation.count }} | {{'\n'}}{% endfor
+          -%}
+
+          {% endfor -%}
+
+          {%- else -%}
+
+          No aggregated tracemalloc results yet.
+
+          {%- endif %}
+        grid_options:
+          columns: 36
+          rows: auto
+    column_span: 3
 header:
   card:
     type: markdown
     text_only: true
-    content: '# MemSpy - Memory Diagnostics!'
+    content: |-
+      # MemSpy - Memory Diagnostics!
+
+      Dashboard version: **2**
 icon: mdi:incognito
 cards: []

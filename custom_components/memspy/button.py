@@ -25,14 +25,14 @@ class InstallDashboardButton(ButtonEntity):
     _attr_should_poll = False
 
     def __init__(self, entry: ConfigEntry, domain: str) -> None:
-        self._attr_name = "Install dashboard"
+        self._attr_name = "Install or Upgrade"
         self._attr_unique_id = f"{entry.entry_id}_install_dashboard"
         self._attr_device_info = DeviceInfo(
             identifiers={(domain, entry.entry_id)}, name="Memspy"
         )
 
     async def async_press(self) -> None:
-        """Install or refresh the MemSpy view on the default Lovelace dashboard."""
+        """Install or upgrade the MemSpy view on its dedicated dashboard."""
         await self.hass.services.async_call(
             DOMAIN,
             SERVICE_INSTALL_DASHBOARD,

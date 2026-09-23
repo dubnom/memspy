@@ -349,7 +349,7 @@ def test_dashboard_view_includes_version_marker():
 def test_install_dashboard_button_has_expected_entity_name():
     button = InstallDashboardButton(SimpleNamespace(entry_id="entry"), "test")
 
-    assert button.name == "Install dashboard"
+    assert button.name == "Install or Upgrade"
 
 
 def test_results_limit_must_be_positive():

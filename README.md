@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.16
+Version: 1.2.17
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -91,6 +91,7 @@ For a good description of how memory works and finding leaks read - [How to Debu
 - `sensor.memspy_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
 - `sensor.memspy_tracemalloc` — stores the number of rows in the most recent snapshot and exposes the top-N snapshot as JSON in its `snapshot` attribute. Rows include `filename`, `line`, `memory`, `count`, and `mph` fields.
 - `sensor.memspy_tracemalloc_by_integration` — stores aggregated and grouped integrations in its `results` attribute. Results include `integration`, `total memory`, `total mph`, and detailed `allocations` rows. Aggregation considers up to ten times the `results limit` to save resources.
+- `binary_sensor.memspy_dashboard_out_of_date` — is `on` when the dedicated dashboard is missing or older than the bundled dashboard. Press the MemSpy device's **Install or Upgrade** button to update it.
 - `sensor.memspy` — global summary sensor for total live objects, memory, garbage-collector statistics, and GC stats.
 - `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.
 
@@ -146,7 +147,7 @@ The summary sensor exposes the overall GC snapshot and total object count. The c
 
 ## User Interface (Lovelace)
 
-A dedicated **MemSpy** dashboard is auto installed by the integration and appears in the Home Assistant sidebar at `/lovelace/memspy-dashboard`. Upgrading MemSpy may overwrite its `memspy` view, so copy or rename the view if you customize it. If the dashboard does not appear automatically, press the MemSpy device's **Install dashboard** button or call the `memspy.install_dashboard` action. The following custom cards (from HACS) & integrations are used:
+A dedicated **MemSpy** dashboard appears in the Home Assistant sidebar at `/lovelace/memspy-dashboard` after you press the MemSpy device's **Install or Upgrade** button or call the `memspy.install_dashboard` action. Upgrading MemSpy may overwrite its managed `memspy` view, so copy or rename the view if you customize it. The following custom cards (from HACS) & integrations are used:
 - [custom:custom-icons](https://github.com/thomasloven/hass-custom_icons)
 - [custom:apex_charts](https://github.com/romrider/apexcharts-card)
 - [custom:mushroom-select-card](https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/select.md)
