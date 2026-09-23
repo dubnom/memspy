@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 6
+memspy_view_version: 7
 sections:
   - type: grid
     cards:
@@ -161,8 +161,11 @@ sections:
           **Status** - As of {{
           time_since(states.sensor.memspy.last_updated) }} ago
 
-          System running for {{ time_since(as_datetime(
+          Hardware running for {{ time_since(as_datetime(
           states('sensor.last_boot'))) }} 
+
+          Home Assistant running for {{ time_since(as_datetime(
+          states('sensor.uptime'))) }}
 
           {% set ent = "sensor.memspy" %}
 
@@ -209,7 +212,7 @@ header:
     content: |-
       # MemSpy - Memory Diagnostics
 
-      Dashboard version: **6**
+      Dashboard version: **7**
 icon: mdi:incognito
 # Archived raw snapshot card. The active dashboard uses Memory by Integration.
 # - type: markdown
