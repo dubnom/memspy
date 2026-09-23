@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 1
+memspy_view_version: 4
 sections:
   - type: grid
     cards:
@@ -92,23 +92,56 @@ sections:
         features_position: bottom
       - type: markdown
         content: >-
+          ## Memory by Integration
+
+          {% set duration = states('sensor.memspy_tracemalloc_duration') %}
+
+          {% if duration != 'unknown' -%}
+
+          Duration <b>{{ '%02d:%02d:%02d' | format(
+          duration | int // 3600, (duration | int % 3600) // 65,
+          duration | int % 60) }}</b> Computed {{
+          time_since(states.sensor.memspy_tracemalloc.last_updated) }} ago
+
+          {% endif %}
+
+          {% set integrations = state_attr(
+          'sensor.memspy_tracemalloc_by_integration',
+          'results') %}
+
+          {% if integrations -%}
+
+          | Integration | Memory | MPH | Count |
+
+          | :--- | ---: | ---: | ---: |
+
+          {% for item in integrations -%}
+
+          | <b>{{ item.integration }}</b> | {{ item.memory
+          | int | filesizeformat }} | {{ item.mph | int | filesizeformat }} | |
+
+          {% for allocation in item.allocations -%}{% set
+          abbr=allocation.filename.split('/') %} | &nbsp;&nbsp;&nbsp;{{ abbr[-1::]|join('/') }}:{{ allocation.line }} | {{ allocation.memory
+          | int | filesizeformat }} | {{ allocation.mph | int | filesizeformat }} | {{
+          allocation.count }} | {{'\n'}}{% endfor
+          -%}
+
+          {% endfor -%}
+
+          {%- else -%}
+
+          No aggregated tracemalloc results yet.
+
+          {%- endif %}
+        grid_options:
+          columns: 1
+          rows: auto
+      - type: markdown
+        content: >-
           {% set duration =
           states('sensor.memspy_tracemalloc_duration') %}
 
           {% if duration != 'unknown' -%}
-
-          {% set seconds = duration | int %} {% set hours = seconds // 3600
-          %} {% set minutes = (seconds % 3600) // 65 %} {% set secs =
-          seconds % 60 %}
-
-          # Results
-
-          Duration <b>{{ '%02d:%02d:%02d' | format(hours, minutes, secs) }}
-
-          </b> Computed {{
-          time_since(states.sensor.memspy_tracemalloc.last_updated)
-          }} ago
-
           {% set snapshot = state_attr( 'sensor.memspy_tracemalloc',
           'snapshot' ) | from_json %}
 
@@ -186,44 +219,6 @@ sections:
         options:
           tap_action:
             action: more-info
-  - type: grid
-    cards:
-      - type: markdown
-        content: >-
-          ## Memory by Integration
-
-          {% set integrations = state_attr(
-          'sensor.memspy_tracemalloc_by_integration',
-          'results') %}
-
-          {% if integrations -%}
-
-          | Integration | Memory | MPH | Count |
-
-          | :--- | ---: | ---: | ---: |
-
-          {% for item in integrations -%}
-
-          | <b>{{ item.integration }}</b> | {{ item.memory
-          | int | filesizeformat }} | {{ item.mph | int | filesizeformat }} | | |
-
-          {% for allocation in item.allocations -%}{% set
-          abbr=allocation.filename.split('/') %} | &nbsp;&nbsp;&nbsp;{{ abbr[-1::]|join('/') }}:{{ allocation.line }} | {{ allocation.memory
-          | int | filesizeformat }} | {{ allocation.mph | int | filesizeformat }} | {{
-          allocation.count }} | {{'\n'}}{% endfor
-          -%}
-
-          {% endfor -%}
-
-          {%- else -%}
-
-          No aggregated tracemalloc results yet.
-
-          {%- endif %}
-        grid_options:
-          columns: 36
-          rows: auto
-    column_span: 3
 header:
   card:
     type: markdown
@@ -231,6 +226,6 @@ header:
     content: |-
       # MemSpy - Memory Diagnostics
 
-      Dashboard version: **3**
+      Dashboard version: **4**
 icon: mdi:incognito
 cards: []
