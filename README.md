@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.26
+Version: 1.2.27
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 

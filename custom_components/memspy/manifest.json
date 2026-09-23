@@ -1,7 +1,7 @@
 {
   "domain": "memspy",
   "name": "Memspy",
-  "version": "1.2.26",
+  "version": "1.2.27",
   "codeowners": [],
   "config_flow": true,
   "documentation": "https://github.com/dubnom/memspy",

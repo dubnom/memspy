@@ -211,7 +211,6 @@ header:
     text_only: true
     content: |-
       # MemSpy - Memory Diagnostics
-
       Dashboard version: **7**
 icon: mdi:incognito
 # Archived raw snapshot card. The active dashboard uses Memory by Integration.
