@@ -49,6 +49,7 @@ class TracemallocIncludeSelect(SelectEntity):
     """Select which integration source directory tracemalloc includes."""
 
     _attr_icon = "mdi:folder-search"
+    _attr_has_entity_name = False
 
     def __init__(
         self,

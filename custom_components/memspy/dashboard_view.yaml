@@ -69,7 +69,7 @@ sections:
         heading_style: title
         heading: TraceMalloc
       - type: tile
-        entity: switch.memspy_memspy_tracemalloc_active
+        entity: switch.memspy_tracemalloc_active
         name: Tracing
         state_content: last_changed
         vertical: false
@@ -77,7 +77,7 @@ sections:
           - type: toggle
         features_position: bottom
       - type: custom:mushroom-select-card
-        entity: select.memspy_memspy_memspy_tracemalloc_include
+        entity: select.memspy_tracemalloc_include
         name: Integrations to Include
         grid_options:
           columns: 6
@@ -86,14 +86,14 @@ sections:
         grid_options:
           columns: 12
           rows: 1
-        entity: text.memspy_memspy_tracemalloc_exclude
+        entity: text.memspy_tracemalloc_exclude
         name: Exclude
         vertical: false
         features_position: bottom
       - type: markdown
         content: >-
           {% set duration =
-          states('sensor.memspy_memspy_tracemalloc_duration') %}
+          states('sensor.memspy_tracemalloc_duration') %}
 
           {% if duration != 'unknown' -%}
 
@@ -106,10 +106,10 @@ sections:
           Duration <b>{{ '%02d:%02d:%02d' | format(hours, minutes, secs) }}
 
           </b> Computed {{
-          time_since(states.sensor.memspy_memspy_tracemalloc.last_updated)
+          time_since(states.sensor.memspy_tracemalloc.last_updated)
           }} ago
 
-          {% set snapshot = state_attr( 'sensor.memspy_memspy_tracemalloc',
+          {% set snapshot = state_attr( 'sensor.memspy_tracemalloc',
           'snapshot' ) | from_json %}
 
           | Module | Line | Memory | MPH | Count |
@@ -126,7 +126,7 @@ sections:
         heading_style: title
         heading: Objects
       - type: tile
-        entity: switch.memspy_memspy_memory_scanning
+        entity: switch.memspy_memory_scanning
         name: Memory Scanning
         show_entity_picture: false
         hide_state: false
@@ -136,7 +136,7 @@ sections:
           - type: toggle
         features_position: bottom
       - type: tile
-        entity: number.memspy_memspy_memory_scan_frequency
+        entity: number.memspy_memory_scan_frequency
         name: Scan Period
         vertical: false
         features_position: bottom
@@ -193,7 +193,7 @@ sections:
           ## Memory by Integration
 
           {% set integrations = state_attr(
-          'sensor.memspy_memspy_memspy_tracemalloc_by_integration',
+          'sensor.memspy_tracemalloc_by_integration',
           'results') %}
 
           {% if integrations -%}
@@ -231,6 +231,6 @@ header:
     content: |-
       # MemSpy - Memory Diagnostics
 
-      Dashboard version: **2**
+      Dashboard version: **3**
 icon: mdi:incognito
 cards: []

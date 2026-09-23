@@ -37,6 +37,7 @@ class MemoryScanningSwitch(SwitchEntity):
 
     _attr_should_poll = False
     _attr_icon = "mdi:database-search"
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
@@ -78,6 +79,7 @@ class TracemallocSwitch(SwitchEntity):
 
     _attr_should_poll = False
     _attr_icon = "mdi:memory"
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager

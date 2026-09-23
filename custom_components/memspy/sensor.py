@@ -81,6 +81,7 @@ class _MemspyEntity(SensorEntity):
     """Base entity that refreshes whenever a snapshot is collected."""
 
     _attr_should_poll = False
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager

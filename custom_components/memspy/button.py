@@ -23,6 +23,7 @@ class InstallDashboardButton(ButtonEntity):
     """Expose a UI button that installs or refreshes the MemSpy dashboard view."""
 
     _attr_should_poll = False
+    _attr_has_entity_name = False
 
     def __init__(self, entry: ConfigEntry, domain: str) -> None:
         self._attr_name = "Install or Upgrade"

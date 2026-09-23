@@ -16,7 +16,7 @@ DEDICATED_DASHBOARD_PATH = "memspy-dashboard"
 _VIEW_FILE = Path(__file__).parent / "dashboard_view.yaml"
 VIEW_VERSION_KEY = "memspy_view_version"
 # Bump whenever the bundled dashboard changes so existing installs pick up the update.
-VIEW_VERSION = 2
+VIEW_VERSION = 3
 
 
 def _load_view_sync() -> dict[str, Any]:

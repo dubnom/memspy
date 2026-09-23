@@ -28,6 +28,7 @@ class DashboardOutOfDateBinarySensor(BinarySensorEntity):
     """Indicate that the dedicated MemSpy dashboard needs installation or upgrade."""
 
     _attr_should_poll = False
+    _attr_has_entity_name = False
     _attr_device_class = BinarySensorDeviceClass.UPDATE
 
     def __init__(self, entry: ConfigEntry) -> None:

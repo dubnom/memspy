@@ -7,6 +7,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
@@ -29,6 +30,42 @@ PLATFORMS = [
     "binary_sensor",
 ]
 _LOGGER = logging.getLogger(__name__)
+
+
+def _migrate_entity_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove redundant device-name prefixes from existing MemSpy entity IDs."""
+    registry = er.async_get(hass)
+    targets = {
+        "_summary": "sensor.memspy",
+        "_tracemalloc": "sensor.memspy_tracemalloc",
+        "_tracemalloc_by_integration": "sensor.memspy_tracemalloc_by_integration",
+        "_tracemalloc_duration": "sensor.memspy_tracemalloc_duration",
+        "_results_limit": "number.memspy_results_limit",
+        "_memory_scan_frequency": "number.memspy_memory_scan_frequency",
+        "_tracemalloc_include_select": "select.memspy_tracemalloc_include",
+        "_tracemalloc_exclude": "text.memspy_tracemalloc_exclude",
+        "_memory_scanning": "switch.memspy_memory_scanning",
+        "_tracemalloc_active": "switch.memspy_tracemalloc_active",
+        "_install_dashboard": "button.install_or_upgrade",
+        "_dashboard_out_of_date": "binary_sensor.dashboard_out_of_date",
+    }
+    for entity in list(registry.entities.values()):
+        if entity.config_entry_id != entry.entry_id:
+            continue
+        suffix = next(
+            (value for value in targets if entity.unique_id.endswith(value)),
+            None,
+        )
+        if suffix is None:
+            continue
+        target_entity_id = targets[suffix]
+        if entity.entity_id == target_entity_id:
+            continue
+        existing = registry.async_get(target_entity_id)
+        if existing is None:
+            registry.async_update_entity(
+                entity.entity_id, new_entity_id=target_entity_id
+            )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -66,6 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     configure_refresh()
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _migrate_entity_ids(hass, entry)
 
     async def handle_install_dashboard(_call: ServiceCall) -> dict[str, str]:
         """Install or upgrade the MemSpy Lovelace view on request."""

@@ -25,6 +25,7 @@ class TracemallocExcludeText(TextEntity):
     """Controls newline-separated native tracemalloc exclusion patterns."""
 
     _attr_native_max = 255
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager

@@ -37,6 +37,7 @@ class ResultsLimitNumber(NumberEntity):
     _attr_native_max_value = 2**63 - 1
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager
@@ -65,6 +66,7 @@ class RefreshFrequencyNumber(NumberEntity):
     _attr_native_max_value = 86400
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
+    _attr_has_entity_name = False
 
     def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
         self._manager = manager

@@ -18,15 +18,16 @@ Prepare and publish the current Memspy integration.
    - Per-class sensors expose `count` and `memory` as attributes.
    - `number.memspy_results_limit` controls the top-N class filter and defaults to `10`.
    - Object-memory scanning is controlled by `number.memspy_memory_scan_frequency` and `switch.memspy_memory_scanning`; no refresh services exist.
-3. Bump the integration patch version in `custom_components/memspy/manifest.json` unless the user specifies a different release level. Preserve the config-flow schema version unless the config-entry data schema changes.
-4. Run the project validation available in the repository:
+3. Check whether `custom_components/memspy/dashboard_view.yaml` has substantive content changes relative to `HEAD` with `git diff HEAD -- custom_components/memspy/dashboard_view.yaml`. If the dashboard content changed, increment `VIEW_VERSION` in `custom_components/memspy/dashboard.py` and update the matching `memspy_view_version` marker and visible dashboard version label in `dashboard_view.yaml`. Do not increment the view version for a release that only changes the marker or label themselves. This keeps the dashboard freshness sensor and the explicit Install or Upgrade action synchronized with the bundled YAML.
+4. Bump the integration patch version in `custom_components/memspy/manifest.json` unless the user specifies a different release level. Preserve the config-flow schema version unless the config-entry data schema changes.
+5. Run the project validation available in the repository:
    - `git diff --check`
    - `. .venv/bin/activate && python -m pytest -q` when `.venv` exists
    - Python compilation for changed integration modules
-5. Review the diff and ensure captured log files, credentials, virtual environments, and cache directories are not staged.
-6. Stage only the intended project changes and create a concise release commit, using `Release Memspy X.Y.Z` when the manifest version is `X.Y.Z`.
-7. Push the current branch to its configured upstream or `origin`. Do not expose credentials in chat or command output.
-8. Verify and report the commit hash, pushed branch, test result, and final clean/synchronized Git status.
+6. Review the diff and ensure captured log files, credentials, virtual environments, and cache directories are not staged.
+7. Stage only the intended project changes and create a concise release commit, using `Release Memspy X.Y.Z` when the manifest version is `X.Y.Z`.
+8. Push the current branch to its configured upstream or `origin`. Do not expose credentials in chat or command output.
+9. Verify and report the commit hash, pushed branch, test result, and final clean/synchronized Git status.
 
 ## Safety
 
