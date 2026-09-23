@@ -1,4 +1,4 @@
-"""Dynamically register the MemSpy view on the default Lovelace dashboard."""
+"""Dynamically register the MemSpy view on the dedicated dashboard."""
 from __future__ import annotations
 
 import logging
@@ -13,16 +13,23 @@ _LOGGER = logging.getLogger(__name__)
 
 VIEW_PATH = "memspy"
 DEDICATED_DASHBOARD_PATH = "memspy-dashboard"
-_VIEW_FILE = Path(__file__).parent / "dashboard_view.yaml"
+_VIEW_FILE = Path(__file__).parent / "dashboard_raw.yaml"
 VIEW_VERSION_KEY = "memspy_view_version"
-# Bump whenever dashboard_view.yaml changes so existing installs pick up the update.
-VIEW_VERSION = 1
+# Bump whenever the bundled dashboard changes so existing installs pick up the update.
+VIEW_VERSION = 2
 
 
 def _load_view_sync() -> dict[str, Any]:
     """Read the bundled MemSpy Lovelace view definition without blocking the event loop."""
     with _VIEW_FILE.open("r", encoding="utf-8") as handle:
-        view = yaml.safe_load(handle)
+        dashboard = yaml.safe_load(handle)
+    views = dashboard.get("views", [])
+    view = next(
+        (candidate for candidate in views if candidate.get("path") == VIEW_PATH),
+        None,
+    )
+    if view is None:
+        raise ValueError(f"Bundled dashboard does not contain the {VIEW_PATH!r} view")
     view[VIEW_VERSION_KEY] = VIEW_VERSION
     return view
 

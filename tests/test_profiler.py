@@ -343,6 +343,7 @@ def test_dashboard_view_includes_version_marker():
     view = dashboard._load_view_sync()
 
     assert view.get("memspy_view_version") == dashboard.VIEW_VERSION
+    assert view.get("path") == dashboard.VIEW_PATH
 
 
 def test_install_dashboard_button_has_expected_entity_name():

@@ -121,26 +121,21 @@ sections:
             {%- endfor %}
           {%- endif %}
       - type: markdown
-        content: >-
+        content: |-
           ## Memory by Integration
-
-          {% set integrations = state_attr(
-          'sensor.memspy_memspy_tracemalloc_by_integration', 'results') or [] %}
-
-          {% if integrations %}
-          {% for item in integrations %}
-          ### {{ item.integration }} - {{ '{:,.0f}'.format(item.memory | int) }} bytes
-
-          | File | Line | Memory | MPH | Count |
-          | :--- | ---: | ---: | ---: | ---: |
-          {% for allocation in item.allocations %}
-          | {{ allocation.filename }} | {{ allocation.line }} | {{ '{:,.0f}'.format(allocation.memory | int) }} | {{ '{:,.0f}'.format(allocation.mph | int) }} | {{ allocation.count }} |
-          {% endfor %}
-
-          {% endfor %}
-          {% else %}
-          No aggregated tracemalloc results yet.
-          {% endif %}
+          {% set integrations = state_attr( 'sensor.memspy_memspy_memspy_tracemalloc_by_integration', 'results') %}
+          {% if integrations -%}
+          | Integration | Memory | MPH | File | Line | Count |
+          | :--- | ---: | ---: | :--- | ---: | ---: |
+          {% for item in integrations -%}
+          | {{ item.integration }} | {{ '{:,.0f}'.format(item.memory | int) }} bytes | {{ '{:,.0f}'.format(item.mph | int) }} | | | |
+          {% for allocation in item.allocations -%}
+          | | | | {{ allocation.filename }} | {{ allocation.line }} | {{ allocation.count }} |
+          {% endfor -%}
+          {% endfor -%}
+          {%- else -%}
+            No aggregated tracemalloc results yet.
+          {%- endif %}
   - type: grid
     cards:
       - type: heading
