@@ -198,9 +198,9 @@ sections:
 
           {% if integrations -%}
 
-          | Integration | Memory | MPH | Line | Count |
+          | Integration | Memory | MPH | Count |
 
-          | :--- | ---: | ---: | ---: | ---: |
+          | :--- | ---: | ---: | ---: |
 
           {% for item in integrations -%}
 
@@ -208,9 +208,9 @@ sections:
           | int | filesizeformat }} | {{ item.mph | int | filesizeformat }} | | |
 
           {% for allocation in item.allocations -%}{% set
-          abbr=allocation.filename.split('/') %} | &nbsp;&nbsp;&nbsp;{{ abbr[-1::]|join('/') }} | {{ allocation.memory
+          abbr=allocation.filename.split('/') %} | &nbsp;&nbsp;&nbsp;{{ abbr[-1::]|join('/') }}:{{ allocation.line }} | {{ allocation.memory
           | int | filesizeformat }} | {{ allocation.mph | int | filesizeformat }} | {{
-          allocation.line }} | {{ allocation.count }} | {{'\n'}}{% endfor
+          allocation.count }} | {{'\n'}}{% endfor
           -%}
 
           {% endfor -%}
