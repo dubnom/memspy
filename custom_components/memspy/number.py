@@ -14,7 +14,6 @@ from .const import (
     SIGNAL_REFRESH_CONFIG,
     SIGNAL_PROFILER_UPDATED,
 )
-from .helpers import async_refresh_manager
 from .profiler import ProfilerManager
 
 
@@ -52,10 +51,11 @@ class ResultsLimitNumber(NumberEntity):
         return self._manager.results_limit
 
     async def async_set_native_value(self, value: float) -> None:
-        """Update the bound and refresh object sensors."""
+        """Update the bound and republish the current ranked classes."""
         value = int(value)
         self._manager.set_results_limit(value)
-        await async_refresh_manager(self.hass, self._manager)
+        self._manager.notify_refresh_listeners()
+        async_dispatcher_send(self.hass, SIGNAL_PROFILER_UPDATED)
 
 
 class RefreshFrequencyNumber(NumberEntity):
