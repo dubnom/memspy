@@ -184,6 +184,7 @@ class ProfilerManager:
         filters = self._tracemalloc_filters()
         if filters:
             snapshot = snapshot.filter_traces(filters)
+        elapsed_seconds = self.tracemalloc_elapsed
         rows: list[dict[str, object]] = []
         aggregate_rows: list[dict[str, object]] = []
         aggregate_limit = max(1, self.results_limit * 10)
@@ -194,6 +195,7 @@ class ProfilerManager:
                 "lineno": stat.traceback[0].lineno,
                 "size": stat.size,
                 "count": stat.count,
+                "mph": self._memory_per_hour(stat.size, elapsed_seconds),
             }
             aggregate_rows.append(row)
             if len(rows) < max(1, self.results_limit):
@@ -203,13 +205,22 @@ class ProfilerManager:
 
         self.last_tracemalloc_snapshot = rows
         self.last_tracemalloc_by_integration = self.aggregate_tracemalloc_snapshot(
-            aggregate_rows
+            aggregate_rows, elapsed_seconds=elapsed_seconds
         )[: self.results_limit]
         return rows
 
     @staticmethod
+    def _memory_per_hour(memory: int, elapsed_seconds: float) -> int:
+        """Return the observed memory amount per elapsed hour."""
+        if elapsed_seconds <= 0:
+            return 0
+        return round(memory / (elapsed_seconds / 3600))
+
+    @staticmethod
     def aggregate_tracemalloc_snapshot(
         rows: list[dict[str, object]],
+        *,
+        elapsed_seconds: float = 0,
     ) -> list[dict[str, object]]:
         """Group snapshot rows by the Home Assistant integration in their path."""
         grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
@@ -234,6 +245,9 @@ class ProfilerManager:
                     "line": row["lineno"],
                     "memory": row["size"],
                     "count": row["count"],
+                    "mph": ProfilerManager._memory_per_hour(
+                        int(row["size"]), elapsed_seconds
+                    ),
                 }
             )
 
@@ -241,6 +255,10 @@ class ProfilerManager:
             {
                 "integration": integration,
                 "memory": sum(int(row["memory"]) for row in integration_rows),
+                "mph": ProfilerManager._memory_per_hour(
+                    sum(int(row["memory"]) for row in integration_rows),
+                    elapsed_seconds,
+                ),
                 "allocations": integration_rows,
             }
             for integration, integration_rows in grouped.items()

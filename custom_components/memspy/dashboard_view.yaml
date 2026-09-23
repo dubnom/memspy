@@ -112,14 +112,35 @@ sections:
           {% set snapshot = state_attr( 'sensor.memspy_memspy_tracemalloc',
           'snapshot' ) | from_json %}
 
-          | Module | Line | Memory | Count |
+          | Module | Line | Memory | MPH | Count |
 
-          | :---- | ----: |----: | ----: |
+          | :---- | ----: | ----: | ---: | ----: |
 
           {% for snap in snapshot or [] -%}
-            {%set abbr = snap.filename.split('/') %}   | {{ abbr[-2::] | join('/') }} | {{ snap.lineno }} | {{snap.size |  int}} | {{ snap.count }} | {{ '\n' }}
+            {%set abbr = snap.filename.split('/') %}   | {{ abbr[-2::] | join('/') }} | {{ snap.lineno }} | {{snap.size | int}} | {{snap.mph | int}} | {{ snap.count }} | {{ '\n' }}
             {%- endfor %}
           {%- endif %}
+      - type: markdown
+        content: >-
+          ## Memory by Integration
+
+          {% set integrations = state_attr(
+          'sensor.memspy_memspy_tracemalloc_by_integration', 'results') or [] %}
+
+          {% if integrations %}
+          {% for item in integrations %}
+          ### {{ item.integration }} - {{ '{:,.0f}'.format(item.memory | int) }} bytes
+
+          | File | Line | Memory | MPH | Count |
+          | :--- | ---: | ---: | ---: | ---: |
+          {% for allocation in item.allocations %}
+          | {{ allocation.filename }} | {{ allocation.line }} | {{ '{:,.0f}'.format(allocation.memory | int) }} | {{ '{:,.0f}'.format(allocation.mph | int) }} | {{ allocation.count }} |
+          {% endfor %}
+
+          {% endfor %}
+          {% else %}
+          No aggregated tracemalloc results yet.
+          {% endif %}
   - type: grid
     cards:
       - type: heading

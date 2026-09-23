@@ -93,6 +93,7 @@ def test_tracemalloc_snapshot_uses_results_limit():
         assert len(snapshot) <= 2
         assert all("filename" in item for item in snapshot)
         assert all("size" in item for item in snapshot)
+        assert all("mph" in item for item in snapshot)
     finally:
         manager.stop_tracemalloc()
 
@@ -116,22 +117,24 @@ def test_tracemalloc_snapshot_aggregates_by_integration():
         {"filename": "/usr/local/lib/python3.13/site-packages/homeassistant/components/beta/c.py", "lineno": 30, "size": 25, "count": 1},
     ]
 
-    result = ProfilerManager.aggregate_tracemalloc_snapshot(rows)
+    result = ProfilerManager.aggregate_tracemalloc_snapshot(rows, elapsed_seconds=3600)
 
     assert result == [
         {
             "integration": "alpha",
             "memory": 100,
+            "mph": 100,
             "allocations": [
-                {"filename": "/config/custom_components/alpha/b.py", "line": 20, "memory": 60, "count": 3},
-                {"filename": "/config/custom_components/alpha/a.py", "line": 10, "memory": 40, "count": 2},
+                {"filename": "/config/custom_components/alpha/b.py", "line": 20, "memory": 60, "count": 3, "mph": 60},
+                {"filename": "/config/custom_components/alpha/a.py", "line": 10, "memory": 40, "count": 2, "mph": 40},
             ],
         },
         {
             "integration": "beta",
             "memory": 25,
+            "mph": 25,
             "allocations": [
-                {"filename": "/usr/local/lib/python3.13/site-packages/homeassistant/components/beta/c.py", "line": 30, "memory": 25, "count": 1},
+                {"filename": "/usr/local/lib/python3.13/site-packages/homeassistant/components/beta/c.py", "line": 30, "memory": 25, "count": 1, "mph": 25},
             ],
         },
     ]
@@ -253,16 +256,16 @@ def test_tracemalloc_aggregation_uses_rows_before_result_limit(monkeypatch):
         manager.stop_tracemalloc()
 
     assert len(snapshot) == 1
-    assert manager.last_tracemalloc_by_integration == [
-        {
-            "integration": "alpha",
-            "memory": 190,
-            "allocations": [
-                {"filename": "/config/custom_components/alpha/a.py", "line": 10, "memory": 100, "count": 1},
-                {"filename": "/config/custom_components/alpha/b.py", "line": 20, "memory": 90, "count": 2},
-            ],
-        }
+    result = manager.last_tracemalloc_by_integration
+    assert len(result) == 1
+    assert result[0]["integration"] == "alpha"
+    assert result[0]["memory"] == 190
+    assert result[0]["mph"] > 0
+    assert [allocation["memory"] for allocation in result[0]["allocations"]] == [
+        100,
+        90,
     ]
+    assert all("mph" in allocation for allocation in result[0]["allocations"])
 
 
 def test_snapshot_exclusions_are_applied_before_results_limit():
