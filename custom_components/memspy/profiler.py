@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import gc
+from collections import defaultdict
 import sys
 import time
 import tracemalloc
@@ -38,6 +39,7 @@ class ProfilerManager:
         self._tracemalloc_started_at: float | None = None
         self._tracemalloc_elapsed = 0.0
         self.last_tracemalloc_snapshot: list[dict[str, object]] | None = None
+        self.last_tracemalloc_by_integration: list[dict[str, object]] = []
 
     def add_refresh_listener(self, listener: Callable[[], None]) -> None:
         """Register a callback notified after each snapshot."""
@@ -183,18 +185,69 @@ class ProfilerManager:
         if filters:
             snapshot = snapshot.filter_traces(filters)
         rows: list[dict[str, object]] = []
+        aggregate_rows: list[dict[str, object]] = []
+        aggregate_limit = max(1, self.results_limit * 10)
         for stat in snapshot.statistics("lineno"):
             filename = stat.traceback[0].filename
-            rows.append(
-                {
-                    "filename": filename,
-                    "lineno": stat.traceback[0].lineno,
-                    "size": stat.size,
-                    "count": stat.count,
-                }
-            )
-            if len(rows) >= max(1, self.results_limit):
+            row = {
+                "filename": filename,
+                "lineno": stat.traceback[0].lineno,
+                "size": stat.size,
+                "count": stat.count,
+            }
+            aggregate_rows.append(row)
+            if len(rows) < max(1, self.results_limit):
+                rows.append(row)
+            if len(aggregate_rows) >= aggregate_limit:
                 break
 
         self.last_tracemalloc_snapshot = rows
+        self.last_tracemalloc_by_integration = self.aggregate_tracemalloc_snapshot(
+            aggregate_rows
+        )[: self.results_limit]
         return rows
+
+    @staticmethod
+    def aggregate_tracemalloc_snapshot(
+        rows: list[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        """Group snapshot rows by the Home Assistant integration in their path."""
+        grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
+        for row in rows:
+            filename = str(row["filename"])
+            parts = filename.replace("\\", "/").split("/")
+            integration = "unknown"
+            for marker in ("custom_components", "homeassistant/components"):
+                if marker in filename:
+                    marker_parts = marker.split("/")
+                    marker_index = next(
+                        index
+                        for index, part in enumerate(parts)
+                        if parts[index : index + len(marker_parts)] == marker_parts
+                    )
+                    if marker_index + len(marker_parts) < len(parts):
+                        integration = parts[marker_index + len(marker_parts)]
+                    break
+            grouped[integration].append(
+                {
+                    "filename": filename,
+                    "line": row["lineno"],
+                    "memory": row["size"],
+                    "count": row["count"],
+                }
+            )
+
+        results = [
+            {
+                "integration": integration,
+                "memory": sum(int(row["memory"]) for row in integration_rows),
+                "allocations": integration_rows,
+            }
+            for integration, integration_rows in grouped.items()
+        ]
+        for result in results:
+            result["allocations"].sort(
+                key=lambda row: (-int(row["memory"]), row["filename"], row["line"])
+            )
+        results.sort(key=lambda result: (-int(result["memory"]), result["integration"]))
+        return results

@@ -104,8 +104,37 @@ def test_tracemalloc_snapshot_is_stored_on_manager():
         snapshot = manager.snapshot_tracemalloc()
         assert manager.last_tracemalloc_snapshot == snapshot
         assert len(snapshot) <= 2
+        assert len(manager.last_tracemalloc_by_integration) <= 2
     finally:
         manager.stop_tracemalloc()
+
+
+def test_tracemalloc_snapshot_aggregates_by_integration():
+    rows = [
+        {"filename": "/config/custom_components/alpha/a.py", "lineno": 10, "size": 40, "count": 2},
+        {"filename": "/config/custom_components/alpha/b.py", "lineno": 20, "size": 60, "count": 3},
+        {"filename": "/usr/local/lib/python3.13/site-packages/homeassistant/components/beta/c.py", "lineno": 30, "size": 25, "count": 1},
+    ]
+
+    result = ProfilerManager.aggregate_tracemalloc_snapshot(rows)
+
+    assert result == [
+        {
+            "integration": "alpha",
+            "memory": 100,
+            "allocations": [
+                {"filename": "/config/custom_components/alpha/b.py", "line": 20, "memory": 60, "count": 3},
+                {"filename": "/config/custom_components/alpha/a.py", "line": 10, "memory": 40, "count": 2},
+            ],
+        },
+        {
+            "integration": "beta",
+            "memory": 25,
+            "allocations": [
+                {"filename": "/usr/local/lib/python3.13/site-packages/homeassistant/components/beta/c.py", "line": 30, "memory": 25, "count": 1},
+            ],
+        },
+    ]
 
 
 def test_tracemalloc_elapsed_time_is_frozen_after_stop(monkeypatch):
@@ -184,6 +213,55 @@ def test_snapshot_filter_limits_results_to_matching_directory(monkeypatch):
 
     assert [entry["filename"] for entry in snapshot] == [
         "/tmp/prolog/pkg/a.py",
+    ]
+
+
+def test_tracemalloc_aggregation_uses_rows_before_result_limit(monkeypatch):
+    class FakeSnapshot:
+        def filter_traces(self, _filters):
+            return self
+
+        @staticmethod
+        def statistics(_name):
+            return [
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/config/custom_components/alpha/a.py", lineno=10),),
+                    size=100,
+                    count=1,
+                ),
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/config/custom_components/alpha/b.py", lineno=20),),
+                    size=90,
+                    count=2,
+                ),
+                SimpleNamespace(
+                    traceback=(SimpleNamespace(filename="/config/custom_components/beta/c.py", lineno=30),),
+                    size=150,
+                    count=3,
+                ),
+            ]
+
+    monkeypatch.setattr(
+        "custom_components.memspy.profiler.tracemalloc.take_snapshot",
+        lambda: FakeSnapshot(),
+    )
+    manager = ProfilerManager(results_limit=1)
+    manager.start_tracemalloc()
+    try:
+        snapshot = manager.snapshot_tracemalloc()
+    finally:
+        manager.stop_tracemalloc()
+
+    assert len(snapshot) == 1
+    assert manager.last_tracemalloc_by_integration == [
+        {
+            "integration": "alpha",
+            "memory": 190,
+            "allocations": [
+                {"filename": "/config/custom_components/alpha/a.py", "line": 10, "memory": 100, "count": 1},
+                {"filename": "/config/custom_components/alpha/b.py", "line": 20, "memory": 90, "count": 2},
+            ],
+        }
     ]
 
 

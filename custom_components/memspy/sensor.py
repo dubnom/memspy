@@ -41,6 +41,7 @@ async def async_setup_entry(
         elif entity.unique_id.startswith(f"{entry.entry_id}_") and entity.unique_id not in {
             f"{entry.entry_id}_summary",
             f"{entry.entry_id}_tracemalloc",
+            f"{entry.entry_id}_tracemalloc_by_integration",
         }:
             registry.async_remove(entity.entity_id)
 
@@ -70,6 +71,7 @@ async def async_setup_entry(
         [
             SummarySensor(manager, entry),
             TracemallocSensor(manager, entry),
+            TracemallocIntegrationSensor(manager, entry),
             TracemallocDurationSensor(manager, entry),
         ]
     )
@@ -153,6 +155,25 @@ class TracemallocSensor(_MemspyEntity):
         if not snapshot:
             return {"json": 0, "snapshot": "[]"}
         return {"json": len(snapshot), "snapshot": json.dumps(snapshot)}
+
+
+class TracemallocIntegrationSensor(_MemspyEntity):
+    """Groups the latest tracemalloc rows by Home Assistant integration."""
+
+    _attr_icon = "mdi:package-variant-closed"
+
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
+        super().__init__(manager, entry)
+        self._attr_name = "memspy_tracemalloc_by_integration"
+        self._attr_unique_id = f"{entry.entry_id}_tracemalloc_by_integration"
+
+    @property
+    def native_value(self) -> int:
+        return len(self._manager.last_tracemalloc_by_integration)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        return {"results": self._manager.last_tracemalloc_by_integration}
 
 
 class TracemallocDurationSensor(_MemspyEntity):

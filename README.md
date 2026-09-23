@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.2.13
+Version: 1.2.14
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -26,7 +26,7 @@ Three ways of looking at memory:
 
 ### Using `tracemalloc` entities:
 The `select.memspy_tracemalloc_include` controls the integrations that will be examined. There are special options for `all` and `custom`.
-Switching on `switch.memspy_tracemalloc_active` starts the trace. Turning it off populates the `snapshot` attribute of `sensor.memspy_tracemalloc` with a list of `{filename, line number, memory, and count}`. The list is only includes integrations that match `select.memspy_tracemalloc_include`. The list is limited to `number.mempy_results_limit` and is sort from high to low based on memory usage.
+Switching on `switch.memspy_tracemalloc_active` starts the trace. Turning it off populates the `snapshot` attribute of `sensor.memspy_tracemalloc` with a list of `{filename, line number, memory, and count}`. The list only includes integrations that match `select.memspy_tracemalloc_include`. `sensor.memspy_tracemalloc_by_integration` aggregates up to ten times `number.memspy_results_limit` allocation rows by integration, then returns the highest-memory integrations in its `results` attribute.
 
 ### Using `memory` entities:
 Approaching memory issues by seeing how Python objects use memory is another path for finding leaks. The  `gc` library is used to expose the Python classes, the object count, and the total amount of memory consumed. A `sensor.memspy_class_###` is create from 1 to `sensor.memspy_results_limit`.  The class sensors have - the Python class name, the state is the memory used, and a `count` attribute for number of instances. `number.memspy_memory_scan_frequency` controls how often these class entities update. `switch.memspy_memory_scanning` starts and stops the scanning.
@@ -66,12 +66,13 @@ A good description of how memory works and how to find leaks read - [How to Debu
 
 - `number.memspy_memory_scan_frequency` — sets the automatic object-memory scan interval in seconds. It defaults to `30`.
 - `switch.memspy_memory_scanning` — enables or disables periodic object-memory scanning. It is disabled by default. Object-memory scanning is controlled by this frequency number and switch; there are no refresh or set-frequency services.
-- `number.memspy_results_limit` — sets how many of the highest-memory classes receive class sensors and how many tracemalloc rows are returned. Its current default is `10`.
+- `number.memspy_results_limit` — sets how many of the highest-memory classes receive class sensors, how many raw tracemalloc rows are returned, and how many aggregated integrations are exposed. Aggregation considers up to ten times this limit. Its current default is `10`.
 - `select.memspy_tracemalloc_include` — selects the tracemalloc include source: `all`, `custom`, or a configured integration domain. Its `code_location` attribute exposes the resolved source directory for the current selection.
 - `text.memspy_tracemalloc_exclude` — newline-separated tracemalloc filename patterns to exclude. It defaults to an empty value; Memspy and Spook are always excluded in addition to any patterns entered here. Blank lines and lines beginning with `#` are ignored.
 - `switch.memspy_tracemalloc_active` — starts tracemalloc when enabled and captures a final snapshot, fires the `memspy_tracemalloc_snapshot` event, and stops tracemalloc when turned off.
 - `sensor.memspy_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
 - `sensor.memspy_tracemalloc` — stores the number of rows in the most recent snapshot and exposes the top-N snapshot as JSON in its `snapshot` attribute.
+- `sensor.memspy_tracemalloc_by_integration` — exposes the latest snapshot grouped by integration in its `results` attribute. Each result contains `integration`, total `memory`, and `allocations` with `filename`, `line`, `memory`, and `count` fields.
 - `sensor.memspy` — global summary sensor for total live objects, memory, garbage-collector statistics, and GC stats.
 - `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.
 
