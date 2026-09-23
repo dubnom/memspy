@@ -150,8 +150,7 @@ sections:
 
           {% set ent = "sensor.memspy" %}
 
-          Memory: **{{ '{:,.0f}'.format(state_attr(ent, "memory") |
-          float)}}**
+          Memory: **{{ state_attr(ent, "memory") | int | filesizeformat }}**
 
           Objects: **{{ '{:,.0f}'.format(state_attr(ent, "object_count") |
           float(0)) }}**
@@ -199,18 +198,18 @@ sections:
 
           {% if integrations -%}
 
-          | Integration | Memory | MPH | File | Line | Count |
+          | Integration | Memory | MPH | Line | Count |
 
-          | :--- | ---: | ---: | :--- | ---: | ---: |
+          | :--- | ---: | ---: | ---: | ---: |
 
           {% for item in integrations -%}
 
-          | <b>{{ item.integration }}</b> | {{ '{:,.0f}'.format(item.memory
-          | int) }}b | {{ '{:,.0f}'.format(item.mph | int) }}b | | | |
+          | <b>{{ item.integration }}</b> | {{ item.memory
+          | int | filesizeformat }} | {{ item.mph | int | filesizeformat }} | | |
 
           {% for allocation in item.allocations -%}{% set
-          abbr=allocation.filename.split('/') %}   | | {{ allocation.memory
-          }} | {{ allocation.mph }} | {{ abbr[-1::]|join('/') }} | {{
+          abbr=allocation.filename.split('/') %} |      {{ abbr[-1::]|join('/') }} | {{ allocation.memory
+          | int | filesizeformat }} | {{ allocation.mph | int | filesizeformat }} | {{
           allocation.line }} | {{ allocation.count }} | {{'\n'}}{% endfor
           -%}
 
@@ -230,7 +229,7 @@ header:
     type: markdown
     text_only: true
     content: |-
-      # MemSpy - Memory Diagnostics!
+      # MemSpy - Memory Diagnostics
 
       Dashboard version: **2**
 icon: mdi:incognito
