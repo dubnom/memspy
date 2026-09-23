@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 4
+memspy_view_version: 5
 sections:
   - type: grid
     cards:
@@ -134,7 +134,7 @@ sections:
 
           {%- endif %}
         grid_options:
-          columns: 1
+          columns: 12
           rows: auto
       - type: markdown
         content: >-
@@ -226,6 +226,6 @@ header:
     content: |-
       # MemSpy - Memory Diagnostics
 
-      Dashboard version: **4**
+      Dashboard version: **5**
 icon: mdi:incognito
 cards: []
