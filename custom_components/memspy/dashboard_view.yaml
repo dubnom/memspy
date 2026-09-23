@@ -208,7 +208,7 @@ sections:
           | int | filesizeformat }} | {{ item.mph | int | filesizeformat }} | | |
 
           {% for allocation in item.allocations -%}{% set
-          abbr=allocation.filename.split('/') %} |      {{ abbr[-1::]|join('/') }} | {{ allocation.memory
+          abbr=allocation.filename.split('/') %} | &nbsp;&nbsp;&nbsp;{{ abbr[-1::]|join('/') }} | {{ allocation.memory
           | int | filesizeformat }} | {{ allocation.mph | int | filesizeformat }} | {{
           allocation.line }} | {{ allocation.count }} | {{'\n'}}{% endfor
           -%}
