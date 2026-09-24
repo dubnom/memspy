@@ -9,7 +9,7 @@
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=memspy)
 
 *Written by Michael Dubno* -
-Version: 1.3.2
+Version: 1.3.3
 
 A Home Assistant custom integration used for debugging memory issues. It reports memory allocations by integrations, Python object memory usage, and garbage-collector statistics. It exposes all of this through standard Home Assistant entities.
 
@@ -66,7 +66,7 @@ The [gc](https://docs.python.org/3/library/gc.html) documentation provides an ex
 
 ### MemSpy settings
 
-Open the MemSpy integration's **Configure** page to set the machine memory size in GB and choose `dashboard_auto_install`, which controls whether MemSpy automatically creates or updates its dedicated Lovelace dashboard. When it is disabled, use the **Install or Upgrade** button on the MemSpy device.
+MemSpy automatically detects your machine's physical memory and uses it to scale the dashboard's memory charts; no configuration is needed. Use the **Install or Upgrade** button on the MemSpy device to create or update its dedicated Lovelace dashboard.
 
 ## Finding Leaks
 
@@ -95,7 +95,7 @@ For a good description of how memory works and finding leaks read - [How to Debu
 - `sensor.memspy_tracemalloc_duration` — reports the elapsed tracemalloc session time in seconds and keeps the final duration after tracing stops.
 - `sensor.memspy_tracemalloc` — stores the number of rows in the most recent snapshot and exposes the top-N snapshot as JSON in its `snapshot` attribute. Rows include `filename`, `line`, `memory`, `count`, and `mph` fields.
 - `sensor.memspy_tracemalloc_by_integration` — stores aggregated and grouped integrations in its `results` attribute. Results include `integration`, `total memory`, `total mph`, and detailed `allocations` rows. Aggregation considers up to ten times the `results limit` to save resources.
-- `sensor.memspy_machine_memory` — reports the configured physical machine memory in GB. The value is detected initially and can be overridden in the MemSpy Configure page.
+- `sensor.memspy_machine_memory` — reports the physical machine memory in GB, detected automatically at startup.
 - `binary_sensor.memspy_dashboard_out_of_date` — is `on` when the dedicated dashboard is missing or older than the bundled dashboard. Press the MemSpy device's **Install or Upgrade** button to update it.
 - `sensor.memspy` — global summary sensor for total live objects, memory, garbage-collector statistics, and GC stats.
 - `sensor.class_001`, `sensor.class_002`, etc. — rank slots for supported Python classes, ordered by memory usage.

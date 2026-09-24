@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import gc
+import os
+import subprocess
 from collections import defaultdict
 import sys
 import time
@@ -18,20 +20,50 @@ DEFAULT_SNAPSHOT_EXCLUSIONS = (
 )
 
 
-def detect_machine_memory_gb() -> float:
-    """Return physical machine memory in gigabytes."""
+def _total_memory_bytes() -> int | None:
+    """Try several platform-specific ways to read total physical memory."""
     try:
-        import os
+        import psutil  # type: ignore[import-untyped]
 
-        return max(
-            1.0,
-            round(
-            os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1024**3,
-            1,
-            ),
+        return int(psutil.virtual_memory().total)
+    except (ImportError, OSError):
+        pass
+
+    try:
+        with open("/proc/meminfo", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("MemTotal:"):
+                    return int(line.split()[1]) * 1024
+    except (OSError, ValueError, IndexError):
+        pass
+
+    try:
+        output = subprocess.run(
+            ["sysctl", "-n", "hw.memsize"],
+            capture_output=True,
+            check=True,
+            text=True,
+            timeout=5,
         )
+        return int(output.stdout.strip())
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+
+    try:
+        if "SC_PHYS_PAGES" in os.sysconf_names and "SC_PAGE_SIZE" in os.sysconf_names:
+            return os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
     except (ValueError, OSError):
+        pass
+
+    return None
+
+
+def detect_machine_memory_gb() -> float:
+    """Return physical machine memory in gigabytes, defaulting to 1.0 if unknown."""
+    total_bytes = _total_memory_bytes()
+    if not total_bytes:
         return 1.0
+    return max(1.0, round(total_bytes / 1024**3, 1))
 
 
 class ProfilerManager:
