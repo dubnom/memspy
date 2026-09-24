@@ -73,6 +73,7 @@ async def async_setup_entry(
     async_add_entities(
         [
             SummarySensor(manager, entry),
+            MachineMemorySensor(manager, entry),
             TracemallocSensor(manager, entry),
             TracemallocIntegrationSensor(manager, entry),
             TracemallocDurationSensor(manager, entry),
@@ -134,6 +135,22 @@ class SummarySensor(_MemspyEntity):
             "uncollectable": report.get("uncollectable", 0),
             "gc_stats": report["gc_stats"],
         }
+
+
+class MachineMemorySensor(_MemspyEntity):
+    """Reports the configured physical memory size of the host."""
+
+    _attr_icon = "mdi:memory"
+    _attr_native_unit_of_measurement = "GB"
+
+    def __init__(self, manager: ProfilerManager, entry: ConfigEntry) -> None:
+        super().__init__(manager, entry)
+        self._attr_name = "memspy_machine_memory"
+        self._attr_unique_id = f"{entry.entry_id}_machine_memory"
+
+    @property
+    def native_value(self) -> float:
+        return self._manager.machine_memory_gb
 
 
 class TracemallocSensor(_MemspyEntity):

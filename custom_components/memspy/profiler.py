@@ -18,6 +18,22 @@ DEFAULT_SNAPSHOT_EXCLUSIONS = (
 )
 
 
+def detect_machine_memory_gb() -> float:
+    """Return physical machine memory in gigabytes."""
+    try:
+        import os
+
+        return max(
+            1.0,
+            round(
+            os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1024**3,
+            1,
+            ),
+        )
+    except (ValueError, OSError):
+        return 1.0
+
+
 class ProfilerManager:
     """Collects current object count and referent memory snapshots."""
 
@@ -31,6 +47,7 @@ class ProfilerManager:
         self.snapshot_filter = snapshot_filter
         self.snapshot_exclusions = self._parse_snapshot_exclusions(snapshot_exclusions)
         self.refresh_frequency = DEFAULT_REFRESH_FREQUENCY
+        self.machine_memory_gb = detect_machine_memory_gb()
         self.memory_scanning = False
         self.last_report: dict | None = None
         self._refresh_listeners: list[Callable[[], None]] = []

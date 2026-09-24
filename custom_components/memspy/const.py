@@ -7,6 +7,8 @@ ATTR_FREQUENCY = "frequency"
 ATTR_RESULTS_LIMIT = "results_limit"
 DEFAULT_RESULTS_LIMIT = 10
 DEFAULT_REFRESH_FREQUENCY = 30
+CONF_MACHINE_MEMORY_GB = "machine_memory_gb"
+CONF_DASHBOARD_AUTO_INSTALL = "dashboard_auto_install"
 
 EVENT_TRACEMALLOC_SNAPSHOT = "memspy_tracemalloc_snapshot"
 SIGNAL_REFRESH_CONFIG = f"{DOMAIN}_refresh_config"

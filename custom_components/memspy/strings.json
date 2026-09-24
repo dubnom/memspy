@@ -9,5 +9,17 @@
     "abort": {
       "already_configured": "Memspy is already configured."
     }
+    },
+    "options": {
+      "step": {
+        "init": {
+          "title": "MemSpy settings",
+          "description": "Configure host memory reporting and dashboard updates.",
+          "data": {
+            "machine_memory_gb": "Machine memory (GB)",
+            "dashboard_auto_install": "Automatically install or update the dashboard"
+          }
+        }
+      }
   }
 }

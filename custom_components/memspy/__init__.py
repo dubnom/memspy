@@ -12,6 +12,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
+    CONF_DASHBOARD_AUTO_INSTALL,
+    CONF_MACHINE_MEMORY_GB,
     DOMAIN,
     SERVICE_INSTALL_DASHBOARD,
     SIGNAL_DASHBOARD_UPDATED,
@@ -31,6 +33,11 @@ PLATFORMS = [
     "binary_sensor",
 ]
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload MemSpy after its options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _migrate_entity_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -71,7 +78,11 @@ def _migrate_entity_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Memspy from a config entry."""
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     manager = ProfilerManager()
+    configured_memory = entry.options.get(CONF_MACHINE_MEMORY_GB)
+    if configured_memory is not None:
+        manager.machine_memory_gb = max(1.0, float(configured_memory))
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = manager
     refresh_unsub = None
 
@@ -105,6 +116,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _migrate_entity_ids(hass, entry)
+
+    if entry.options.get(CONF_DASHBOARD_AUTO_INSTALL, False):
+        await async_register_dashboard_view(hass, force=True)
 
     async def handle_install_dashboard(_call: ServiceCall) -> dict[str, Any]:
         """Install or upgrade the MemSpy Lovelace view on request."""

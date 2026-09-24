@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 7
+memspy_view_version: 8
 sections:
   - type: grid
     cards:
@@ -41,25 +41,28 @@ sections:
           - decimals: 0
             align_to: 0.1
         graph_span: 4h
+        apex_config:
+          legend:
+            show: false
         series:
           - entity: sensor.memory_use_percent
-            transform: return x * 2**24 * .00000001;
+            transform: return Number(x) / 100 * Number(hass.states['sensor.memspy_machine_memory']?.state || 1);
             unit: gb
             stroke_width: 2
             float_precision: 1
             name: System
           - entity: sensor.memspy_class_001
-            transform: return x * .000000001;
+            transform: return Number(x) / 1024**3;
             unit: gb
             stroke_width: 2
             float_precision: 1
           - entity: sensor.memspy_class_002
-            transform: return x * .000000001;
+            transform: return Number(x) / 1024**3;
             unit: gb
             stroke_width: 2
             float_precision: 1
           - entity: sensor.memspy_class_003
-            transform: return x * .000000001;
+            transform: return Number(x) / 1024**3;
             unit: gb
             stroke_width: 2
             float_precision: 1
@@ -211,7 +214,7 @@ header:
     text_only: true
     content: |-
       # MemSpy - Memory Diagnostics
-      Dashboard version: **7**
+      Dashboard version: **8**
 icon: mdi:incognito
 # Archived raw snapshot card. The active dashboard uses Memory by Integration.
 # - type: markdown
