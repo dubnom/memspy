@@ -56,11 +56,14 @@ async def async_setup_entry(
             class_name = entity.class_name
             if class_name is None:
                 continue
+            unique_id = entity.unique_id
+            if unique_id is None:
+                continue
             entity_id = registry.async_get_entity_id(
-                "sensor", DOMAIN, entity.unique_id
+                "sensor", DOMAIN, unique_id
             )
             if entity_id is not None:
-                registry.async_update_entity(entity_id, name=class_name)
+                registry.async_update_entity(entity_id, name=str(class_name))
         if new_entities:
             async_add_entities(new_entities)
 

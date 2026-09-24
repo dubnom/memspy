@@ -61,7 +61,7 @@ class TracemallocIncludeSelect(SelectEntity):
         self._manager = manager
         self._locations = locations
         self._attr_options = options
-        self._attr_current_option = self._option_for_filter(manager.snapshot_filter)
+        self._attr_current_option: str = self._option_for_filter(manager.snapshot_filter)
         self._attr_name = "memspy_tracemalloc_include"
         self._attr_unique_id = f"{entry.entry_id}_tracemalloc_include_select"
         self._attr_device_info = DeviceInfo(
@@ -86,7 +86,11 @@ class TracemallocIncludeSelect(SelectEntity):
         installed integration) to stay well under Home Assistant recorder's
         16 KiB state-attribute size limit on systems with many integrations.
         """
-        return {"code_location": self._locations.get(self._attr_current_option, "*")}
+        return {
+            "code_location": self._locations.get(
+                self._attr_current_option or OPTION_CUSTOM, "*"
+            )
+        }
 
     async def async_select_option(self, option: str) -> None:
         """Apply the selected include location."""

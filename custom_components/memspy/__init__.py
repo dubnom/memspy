@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
@@ -105,7 +106,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _migrate_entity_ids(hass, entry)
 
-    async def handle_install_dashboard(_call: ServiceCall) -> dict[str, str]:
+    async def handle_install_dashboard(_call: ServiceCall) -> dict[str, Any]:
         """Install or upgrade the MemSpy Lovelace view on request."""
         result = await async_register_dashboard_view(hass, force=True)
         hass.bus.async_fire(SIGNAL_DASHBOARD_UPDATED, {"result": result})

@@ -8,6 +8,7 @@ import time
 import tracemalloc
 from collections.abc import Callable
 from datetime import datetime, timezone
+from typing import cast
 
 from .const import DEFAULT_REFRESH_FREQUENCY, DEFAULT_RESULTS_LIMIT
 
@@ -217,6 +218,13 @@ class ProfilerManager:
         return round(memory / (elapsed_seconds / 3600))
 
     @staticmethod
+    def _as_int(value: object) -> int:
+        """Convert a serialized result value to an integer."""
+        if isinstance(value, (int, float, str)):
+            return int(value)
+        raise TypeError(f"Expected a numeric value, got {type(value).__name__}")
+
+    @staticmethod
     def aggregate_tracemalloc_snapshot(
         rows: list[dict[str, object]],
         *,
@@ -246,7 +254,7 @@ class ProfilerManager:
                     "memory": row["size"],
                     "count": row["count"],
                     "mph": ProfilerManager._memory_per_hour(
-                        int(row["size"]), elapsed_seconds
+                        ProfilerManager._as_int(row["size"]), elapsed_seconds
                     ),
                 }
             )
@@ -254,9 +262,15 @@ class ProfilerManager:
         results = [
             {
                 "integration": integration,
-                "memory": sum(int(row["memory"]) for row in integration_rows),
+                "memory": sum(
+                    ProfilerManager._as_int(row["memory"])
+                    for row in integration_rows
+                ),
                 "mph": ProfilerManager._memory_per_hour(
-                    sum(int(row["memory"]) for row in integration_rows),
+                    sum(
+                        ProfilerManager._as_int(row["memory"])
+                        for row in integration_rows
+                    ),
                     elapsed_seconds,
                 ),
                 "allocations": integration_rows,
@@ -264,8 +278,18 @@ class ProfilerManager:
             for integration, integration_rows in grouped.items()
         ]
         for result in results:
-            result["allocations"].sort(
-                key=lambda row: (-int(row["memory"]), row["filename"], row["line"])
+            allocations = cast(list[dict[str, object]], result["allocations"])
+            allocations.sort(
+                key=lambda row: (
+                    -ProfilerManager._as_int(row["memory"]),
+                    str(row["filename"]),
+                    ProfilerManager._as_int(row["line"]),
+                )
             )
-        results.sort(key=lambda result: (-int(result["memory"]), result["integration"]))
+        results.sort(
+            key=lambda result: (
+                -ProfilerManager._as_int(result["memory"]),
+                str(result["integration"]),
+            )
+        )
         return results
