@@ -2,7 +2,7 @@ type: sections
 max_columns: 4
 title: MemSpy
 path: memspy
-memspy_view_version: 8
+memspy_view_version: 9
 sections:
   - type: grid
     cards:
@@ -46,7 +46,7 @@ sections:
             show: false
         series:
           - entity: sensor.memory_use_percent
-            transform: return Number(x) / 100 * Number(hass.states['sensor.memspy_machine_memory']?.state || 1);
+            transform: return .01 * Number(x) * Number(hass.states['sensor.memspy_memspy_memspy_machine_memory'].state)
             unit: gb
             stroke_width: 2
             float_precision: 1
